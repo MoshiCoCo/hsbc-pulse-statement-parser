@@ -1,0 +1,41 @@
+{
+  "name": "hsbc-rewards",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 4400",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,less,json}\""
+  },
+  "dependencies": {
+    "@arco-design/web-react": "^2.66.16",
+    "@arco-themes/react-arco-pro": "^0.0.7",
+    "axios": "^1.7.0",
+    "next": "^14.2.0",
+    "pdfjs-dist": "3.11.174",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-redux": "^9.1.0",
+    "redux": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "less": "^4.2.0",
+    "postcss-less": "^6.0.0",
+    "prettier": "^3.2.0",
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard": "^36.0.0",
+    "typescript": "^5.4.0"
+  }
+}
