@@ -10,13 +10,13 @@ interface LocaleContextValue {
 }
 
 const LocaleContext = createContext<LocaleContextValue>({
-  lang: 'en-US',
+  lang: 'zh-CN',
   t: (key) => key,
   toggleLang: () => {},
 });
 
 export const LocaleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [lang, setLang] = useState<Lang>('en-US');
+  const [lang, setLang] = useState<Lang>('zh-CN');
 
   const messages: Locale = lang === 'zh-CN' ? zhCN : enUS;
 
