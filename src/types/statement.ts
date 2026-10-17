@@ -23,17 +23,27 @@ export interface RewardCashSummary {
 
 export interface RewardBreakdown {
   baseReward: number;
-  pulseBonus: number;
   redHotBonus: number;
+  applePayQrBonus: number;
+  meituanExtraBonus: number;
   totalReward: number;
   effectiveRate: number;
+  effectiveRatePercent: string;
+}
+
+export interface RewardQualification {
+  qualifiesBase: boolean;
+  qualifiesRedHot: boolean;
+  qualifiesApplePayQr: boolean;
+  qualifiesMeituanExtra: boolean;
+  rewardRate: number;
+  rewardRatePercent: string;
 }
 
 export interface TransactionReward {
   transaction: Transaction;
   breakdown: RewardBreakdown;
-  qualifiesPulse: boolean;
-  qualifiesRedHot: boolean;
+  qualification: RewardQualification;
 }
 
 export interface StatementData {
@@ -53,6 +63,6 @@ export interface AppState {
   allRewards: TransactionReward[];
   loading: boolean;
   error: string | null;
-  pulseCapRemaining: number;
   redHotCapRemaining: number;
+  applePayQrCapRemaining: number;
 }

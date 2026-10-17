@@ -1,8 +1,6 @@
 import { createStore } from 'redux';
-import type { AppState, StatementData, Transaction, TransactionReward } from '@/types/statement';
-
-const PULSE_ANNUAL_CAP_HKD = 80000;
-const RED_HOT_ANNUAL_CAP_HKD = 100000;
+import type { AppState, StatementData, TransactionReward } from '@/types/statement';
+import { RED_HOT_ANNUAL_CAP, APPLE_PAY_QR_ANNUAL_CAP } from '@/utils/rewardCalculator';
 
 interface Action {
   type: string;
@@ -15,8 +13,8 @@ const initialState: AppState = {
   allRewards: [],
   loading: false,
   error: null,
-  pulseCapRemaining: PULSE_ANNUAL_CAP_HKD,
-  redHotCapRemaining: RED_HOT_ANNUAL_CAP_HKD,
+  redHotCapRemaining: RED_HOT_ANNUAL_CAP,
+  applePayQrCapRemaining: APPLE_PAY_QR_ANNUAL_CAP,
 };
 
 function reducer(state = initialState, action: Action): AppState {
@@ -43,17 +41,17 @@ function reducer(state = initialState, action: Action): AppState {
     }
     case 'SET_REWARDS': {
       const rewards: TransactionReward[] = action.payload;
-      const pulseSpent = rewards
-        .filter((r) => r.qualifiesPulse)
-        .reduce((sum, r) => sum + Math.abs(r.transaction.amount), 0);
       const redHotSpent = rewards
-        .filter((r) => r.qualifiesRedHot)
+        .filter((r) => r.qualification.qualifiesRedHot)
+        .reduce((sum, r) => sum + Math.abs(r.transaction.amount), 0);
+      const applePayQrSpent = rewards
+        .filter((r) => r.qualification.qualifiesApplePayQr)
         .reduce((sum, r) => sum + Math.abs(r.transaction.amount), 0);
       return {
         ...state,
         allRewards: rewards,
-        pulseCapRemaining: Math.max(0, PULSE_ANNUAL_CAP_HKD - pulseSpent),
-        redHotCapRemaining: Math.max(0, RED_HOT_ANNUAL_CAP_HKD - redHotSpent),
+        redHotCapRemaining: Math.max(0, RED_HOT_ANNUAL_CAP - redHotSpent),
+        applePayQrCapRemaining: Math.max(0, APPLE_PAY_QR_ANNUAL_CAP - applePayQrSpent),
       };
     }
     default:

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,less,json}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,less,json}\"",
+    "test": "vitest"
   },
   "dependencies": {
     "@arco-design/web-react": "^2.66.16",
@@ -22,6 +23,8 @@
     "redux": "^5.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -31,11 +34,14 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-react": "^7.34.0",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "jsdom": "^30.1.3",
     "less": "^4.2.0",
     "postcss-less": "^6.0.0",
     "prettier": "^3.2.0",
     "stylelint": "^16.0.0",
     "stylelint-config-standard": "^36.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   }
 }

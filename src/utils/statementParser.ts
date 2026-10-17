@@ -130,6 +130,7 @@ function extractPaymentMethod(descTokens: string[]): string {
   const joined = descTokens.join(' ').toUpperCase();
   if (joined.includes('APPLE PAY')) return 'Apple Pay';
   if (joined.includes('UNIONPAY QR')) return 'UnionPay QR';
+  if (joined.includes('UNIONPAY')) return 'UnionPay';
   if (joined.includes('ALIPAY') && !joined.includes('ALIPAYHK')) return 'Alipay';
   if (joined.includes('ALIPAYHK')) return 'AlipayHK';
   if (joined.includes('TENCENT') || joined.includes('TENPAY')) return 'WeChat Pay';
@@ -210,7 +211,7 @@ function parseTransactions(
 
       const TRAILING_STOP_WORDS = new Set([
         'Note:', 'REGISTRATION', 'REWARDCASH', 'HSBC', 'STATEMENT', 'THE', 'FOR',
-        'MARKETING', 'WELCOME', 'Apple', 'REGISTERED', '*****', '****',
+        'MARKETING', 'WELCOME', 'REGISTERED', '*****', '****',
         'Change', 'If', 'We', 'Accrual', 'Information', 'Statement', 'Pulse',
         'Account', 'Card', 'Minimum', 'Please', 'Overdue', 'Total', 'Post',
       ]);
@@ -221,16 +222,16 @@ function parseTransactions(
         trailing.push(tokens[j]);
         j++;
       }
+
       if (trailing.length > 0 && transactions.length > 0) {
         const last = transactions[transactions.length - 1];
-        last.description = (last.description + ' ' + trailing.join(' ')).trim();
         const trailingMethod = extractPaymentMethod(trailing);
+
         if (trailingMethod !== 'Other') {
+          last.description = (last.description + ' ' + trailing.join(' ')).trim();
           last.paymentMethod = trailingMethod;
-        }
-        const trailingMerchant = extractMerchant(trailing);
-        if (trailingMerchant && trailingMethod !== 'Other') {
-          last.merchant = trailingMerchant;
+          const trailingMerchant = extractMerchant(trailing);
+          if (trailingMerchant) last.merchant = trailingMerchant;
         }
       }
 

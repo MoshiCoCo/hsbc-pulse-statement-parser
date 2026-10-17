@@ -1,108 +1,156 @@
-import { Transaction, TransactionReward, RewardBreakdown } from '@/types/statement';
+import { Transaction, TransactionReward, RewardBreakdown, RewardQualification } from '@/types/statement';
 
 const BASE_RATE = 0.004;
-const PULSE_BONUS_RATE = 0.02;
 const RED_HOT_BONUS_RATE = 0.02;
-const PULSE_ANNUAL_CAP = 80000;
-const RED_HOT_ANNUAL_CAP = 100000;
+const APPLE_PAY_QR_BONUS_RATE = 0.02;
+const MEITUAN_APPLE_PAY_EXTRA_RATE = 0.03;
+const RED_HOT_ANNUAL_CAP = 80000;
+const APPLE_PAY_QR_ANNUAL_CAP = 80000;
 
-const CHINA_MOBILE_MERCHANTS = [
-  'Alipay', 'UnionPay', 'UnionPay QR', 'Tencent', 'Tenpay',
-  'WeChat Pay', 'Meituan', 'Meituan Pay', 'Apple Pay',
-  'Luckin Coffee', 'Lawson', 'Tesla', 'Pinduoduo',
-  'Yonghui Supermarket', 'Shifubao', 'Zhuohailing', 'GD',
-];
-
-const CHINA_REGIONS = ['China', 'Macau'];
-
-function isChinaMobilePayment(tx: Transaction): boolean {
-  if (!CHINA_REGIONS.includes(tx.region || '')) return false;
-  if (tx.paymentMethod === 'Other') return false;
-  if (tx.paymentMethod === 'AlipayHK') return false;
-  if (tx.paymentMethod === 'IFS Payment') return false;
-  return CHINA_MOBILE_MERCHANTS.includes(tx.paymentMethod || '');
+function isNonHkTransaction(tx: Transaction): boolean {
+  const region = (tx.region || '').toUpperCase();
+  return !region.includes('HK') && !region.includes('HONG KONG');
 }
 
-function isRedHotEligible(tx: Transaction): boolean {
-  return isChinaMobilePayment(tx);
+function hasApplePayOrQrMarker(tx: Transaction): boolean {
+  const method = (tx.paymentMethod || '').toLowerCase();
+  const desc = (tx.description || '').toUpperCase();
+  return (
+    method === 'apple pay' ||
+    method === 'unionpay qr' ||
+    desc.includes('APPLE PAY') ||
+    desc.includes('UNIONPAY QR')
+  );
+}
+
+function isMeituanApplePay(tx: Transaction): boolean {
+  const method = (tx.paymentMethod || '').toLowerCase();
+  const desc = (tx.description || '').toUpperCase();
+  return method === 'apple pay' && desc.includes('MEITUAN');
 }
 
 export function calculateRewards(
   transactions: Transaction[],
-  pulseCapRemaining: number,
-  redHotCapRemaining: number
+  redHotCapRemaining: number,
+  applePayQrCapRemaining: number
 ): TransactionReward[] {
-  let pulseRemaining = pulseCapRemaining;
   let redHotRemaining = redHotCapRemaining;
+  let applePayQrRemaining = applePayQrCapRemaining;
 
   return transactions
     .filter((tx) => !tx.isCredit)
     .map((tx) => {
       const spendAmount = Math.abs(tx.amount);
-      const qualifiesPulse = isChinaMobilePayment(tx) && pulseRemaining > 0;
-      const qualifiesRedHot = isRedHotEligible(tx) && redHotRemaining > 0;
+      const isCNY = tx.currency === 'CNY';
 
-      const pulseEligibleAmount = qualifiesPulse ? Math.min(spendAmount, pulseRemaining) : 0;
-      const redHotEligibleAmount = qualifiesRedHot ? Math.min(spendAmount, redHotRemaining) : 0;
+      const qualification: RewardQualification = {
+        qualifiesBase: false,
+        qualifiesRedHot: false,
+        qualifiesApplePayQr: false,
+        qualifiesMeituanExtra: false,
+        rewardRate: 0,
+        rewardRatePercent: '0.0%',
+      };
 
-      const baseReward = spendAmount * BASE_RATE;
-      const pulseBonus = pulseEligibleAmount * PULSE_BONUS_RATE;
-      const redHotBonus = redHotEligibleAmount * RED_HOT_BONUS_RATE;
-      const totalReward = baseReward + pulseBonus + redHotBonus;
+      let baseReward = 0;
+      let redHotBonus = 0;
+      let applePayQrBonus = 0;
+      let meituanExtraBonus = 0;
+
+      if (isCNY) {
+        qualification.qualifiesBase = true;
+        qualification.rewardRate += BASE_RATE;
+        baseReward = spendAmount * BASE_RATE;
+
+        if (isNonHkTransaction(tx) && redHotRemaining > 0) {
+          qualification.qualifiesRedHot = true;
+          qualification.rewardRate += RED_HOT_BONUS_RATE;
+          const eligibleAmount = Math.min(spendAmount, redHotRemaining);
+          redHotBonus = eligibleAmount * RED_HOT_BONUS_RATE;
+          redHotRemaining -= eligibleAmount;
+        }
+
+        if (hasApplePayOrQrMarker(tx) && applePayQrRemaining > 0) {
+          qualification.qualifiesApplePayQr = true;
+          qualification.rewardRate += APPLE_PAY_QR_BONUS_RATE;
+          const eligibleAmount = Math.min(spendAmount, applePayQrRemaining);
+          applePayQrBonus = eligibleAmount * APPLE_PAY_QR_BONUS_RATE;
+          applePayQrRemaining -= eligibleAmount;
+        }
+      } else {
+        baseReward = spendAmount * BASE_RATE;
+        qualification.qualifiesBase = true;
+        qualification.rewardRate = BASE_RATE;
+      }
+
+      qualification.rewardRatePercent = `${(qualification.rewardRate * 100).toFixed(1)}%`;
+
+      const totalReward = baseReward + redHotBonus + applePayQrBonus + meituanExtraBonus;
       const effectiveRate = spendAmount > 0 ? totalReward / spendAmount : 0;
-
-      pulseRemaining -= pulseEligibleAmount;
-      redHotRemaining -= redHotEligibleAmount;
 
       const breakdown: RewardBreakdown = {
         baseReward,
-        pulseBonus,
         redHotBonus,
+        applePayQrBonus,
+        meituanExtraBonus,
         totalReward,
         effectiveRate,
+        effectiveRatePercent: `${(effectiveRate * 100).toFixed(1)}%`,
       };
 
-      return { transaction: tx, breakdown, qualifiesPulse, qualifiesRedHot };
+      return { transaction: tx, breakdown, qualification };
     });
 }
 
 export function aggregateRewards(rewards: TransactionReward[]) {
   let totalBase = 0;
-  let totalPulse = 0;
   let totalRedHot = 0;
+  let totalApplePayQr = 0;
+  let totalMeituanExtra = 0;
   let totalSpend = 0;
-  let chinaSpend = 0;
-  let otherSpend = 0;
-  let qualifiedCount = 0;
+  let cnySpend = 0;
+  let hkdSpend = 0;
+  let qualifiedRedHotCount = 0;
+  let qualifiedApplePayQrCount = 0;
+  let qualifiedMeituanExtraCount = 0;
 
   for (const r of rewards) {
     const spend = Math.abs(r.transaction.amount);
     totalSpend += spend;
     totalBase += r.breakdown.baseReward;
-    totalPulse += r.breakdown.pulseBonus;
     totalRedHot += r.breakdown.redHotBonus;
+    totalApplePayQr += r.breakdown.applePayQrBonus;
+    totalMeituanExtra += r.breakdown.meituanExtraBonus;
 
-    if (r.qualifiesPulse) {
-      chinaSpend += spend;
-      qualifiedCount++;
+    if (r.transaction.currency === 'CNY') {
+      cnySpend += spend;
     } else {
-      otherSpend += spend;
+      hkdSpend += spend;
     }
+
+    if (r.qualification.qualifiesRedHot) qualifiedRedHotCount++;
+    if (r.qualification.qualifiesApplePayQr) qualifiedApplePayQrCount++;
+    if (r.qualification.qualifiesMeituanExtra) qualifiedMeituanExtraCount++;
   }
 
-  const totalReward = totalBase + totalPulse + totalRedHot;
+  const totalReward = totalBase + totalRedHot + totalApplePayQr + totalMeituanExtra;
   const effectiveRate = totalSpend > 0 ? totalReward / totalSpend : 0;
 
   return {
     totalBase,
-    totalPulse,
     totalRedHot,
+    totalApplePayQr,
+    totalMeituanExtra,
     totalReward,
     totalSpend,
-    chinaSpend,
-    otherSpend,
+    cnySpend,
+    hkdSpend,
     effectiveRate,
-    qualifiedCount,
+    qualifiedRedHotCount,
+    qualifiedApplePayQrCount,
+    qualifiedMeituanExtraCount,
     totalCount: rewards.length,
   };
 }
+
+export { RED_HOT_ANNUAL_CAP, APPLE_PAY_QR_ANNUAL_CAP };
