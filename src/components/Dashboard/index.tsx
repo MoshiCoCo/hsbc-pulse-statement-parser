@@ -14,8 +14,12 @@ const TabPane = Tabs.TabPane;
 
 const Dashboard: React.FC = () => {
   const dispatch = useDispatch();
-  const { statements, allRewards, loading, error, pulseCapRemaining, redHotCapRemaining } =
-    useSelector((state: AppState) => state);
+  const statements = useSelector((state: AppState) => state.statements);
+  const allRewards = useSelector((state: AppState) => state.allRewards);
+  const loading = useSelector((state: AppState) => state.loading);
+  const error = useSelector((state: AppState) => state.error);
+  const pulseCapRemaining = useSelector((state: AppState) => state.pulseCapRemaining);
+  const redHotCapRemaining = useSelector((state: AppState) => state.redHotCapRemaining);
 
   const handleFileParsed = useCallback(
     async (file: File) => {

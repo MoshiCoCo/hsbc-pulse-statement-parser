@@ -1,245 +1,347 @@
 import { Transaction, StatementData, RewardCashSummary } from '@/types/statement';
 
-const DATE_RE = /^(\d{2}[A-Z]{3})\s+(\d{2}[A-Z]{3})\s+/;
-const AMOUNT_RE = /([\d,]+\.\d{2})(CR)?\s*$/;
+const MONTHS: Record<string, number> = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+};
 
-function parseAmount(raw: string): { amount: number; isCredit: boolean } {
-  const isCredit = raw.includes('CR');
-  const numStr = raw.replace(/CR/g, '').replace(/,/g, '').trim();
-  return { amount: parseFloat(numStr), isCredit };
+function isDateToken(token: string): boolean {
+  return /^\d{2}[A-Z]{3}$/.test(token) && MONTHS[token.slice(2)] !== undefined;
 }
 
-function parseDate(dateStr: string, year: number): string {
-  const months: Record<string, number> = {
-    JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
-    JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
-  };
-  const day = parseInt(dateStr.slice(0, 2), 10);
-  const month = months[dateStr.slice(2, 5)] ?? 0;
+function parseDate(token: string, year: number): string {
+  const day = parseInt(token.slice(0, 2), 10);
+  const month = MONTHS[token.slice(2)] ?? 0;
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 function extractStatementYear(text: string): number {
   const match = text.match(/(\d{2})\s+[A-Z]{3}\s+(\d{4})/);
   if (match) return parseInt(match[2], 10);
-  const match2 = text.match(/STATEMENT\s+DATE.*?(\d{2})\s+([A-Z]{3})\s+(\d{4})/i);
-  if (match2) return parseInt(match2[3], 10);
   return new Date().getFullYear();
 }
 
-function parseRewardCashSummary(lines: string[], currency: 'HKD' | 'CNY'): RewardCashSummary | null {
-  const summaryText = lines.join('\n');
-  const cardMatch = summaryText.match(/CARD\s+NUMBER\s+(\d{4}\s+\d{4}\s+\d{4}\s+\d{4})/);
-  if (!cardMatch) return null;
+function parseAmountToken(token: string): { amount: number; isCredit: boolean } | null {
+  const cleaned = token.replace(/,/g, '');
+  const isCredit = cleaned.endsWith('CR');
+  const numStr = isCredit ? cleaned.slice(0, -2) : cleaned;
+  const num = parseFloat(numStr);
+  if (isNaN(num) || num === 0) return null;
+  return { amount: num, isCredit };
+}
 
-  const getVal = (key: string): number => {
-    const re = new RegExp(`${key}\\s*:\\s*([\\d,]+\\.?\\d*)`);
-    const m = summaryText.match(re);
-    return m ? parseFloat(m[1].replace(/,/g, '')) : 0;
+function tokenize(text: string): string[] {
+  return text.split(/\s+/).filter((t) => t.length > 0);
+}
+
+function parseRewardCashSummary(tokens: string[], startIdx: number): { summary: RewardCashSummary | null; endIdx: number } {
+  const cardMatch = findTokenSequence(tokens, startIdx, ['CARD', 'NUMBER']);
+  if (!cardMatch) return { summary: null, endIdx: startIdx };
+
+  const cardNumber = tokens.slice(cardMatch + 2, cardMatch + 6).join('').replace(/\s/g, '');
+
+  const getVal = (keyTokens: string[]): number => {
+    const idx = findTokenSequence(tokens, startIdx, keyTokens);
+    if (!idx) return 0;
+    const valToken = tokens[idx + keyTokens.length];
+    if (!valToken || valToken === ':') {
+      const valToken2 = tokens[idx + keyTokens.length + 1];
+      return valToken2 ? parseFloat(valToken2.replace(/,/g, '')) || 0 : 0;
+    }
+    return parseFloat(valToken.replace(/,/g, '')) || 0;
   };
 
-  const expMatch = summaryText.match(/REWARDCASH\s+EXPIRING\s+IN\s+(\w+\s+\d{4})\s*:\s*([\d,]+\.?\d*)/);
+  const openingBalance = getVal(['REWARDCASH', 'OPENING', 'BALANCE']);
+  const earned = getVal(['REWARDCASH', 'EARNED']);
+  const adjusted = getVal(['REWARDCASH', 'ADJUSTED']);
+  const redeemed = getVal(['REWARDCASH', 'REDEEMED']);
+  const closingBalance = getVal(['REWARDCASH', 'CLOSING', 'BALANCE']);
+
+  const expIdx = findTokenSequence(tokens, startIdx, ['REWARDCASH', 'EXPIRING', 'IN']);
+  let expiringAmount = 0;
+  let expiringDate = '';
+  if (expIdx) {
+    const dateToken = tokens[expIdx + 3];
+    const amtToken = tokens[expIdx + 4] || tokens[expIdx + 3];
+    if (dateToken && !isNaN(parseFloat(dateToken.replace(/,/g, '')))) {
+      expiringAmount = parseFloat(dateToken.replace(/,/g, ''));
+    } else {
+      expiringDate = dateToken || '';
+      const amtVal = tokens[expIdx + 4];
+      if (amtVal) expiringAmount = parseFloat(amtVal.replace(/,/g, '')) || 0;
+    }
+  }
+
+  const endIdx = findTokenSequence(tokens, startIdx, ['REGISTRATION', 'RENEWAL']) || startIdx + 50;
 
   return {
-    cardNumber: cardMatch[1].replace(/\s+/g, ''),
-    openingBalance: getVal('REWARDCASH OPENING BALANCE'),
-    earned: getVal('REWARDCASH EARNED'),
-    adjusted: getVal('REWARDCASH ADJUSTED'),
-    redeemed: getVal('REWARDCASH REDEEMED'),
-    closingBalance: getVal('REWARDCASH CLOSING BALANCE'),
-    expiringAmount: expMatch ? parseFloat(expMatch[2].replace(/,/g, '')) : 0,
-    expiringDate: expMatch ? expMatch[1] : '',
+    summary: {
+      cardNumber,
+      openingBalance,
+      earned,
+      adjusted,
+      redeemed,
+      closingBalance,
+      expiringAmount,
+      expiringDate,
+    },
+    endIdx,
   };
 }
 
+function findTokenSequence(tokens: string[], fromIdx: number, sequence: string[]): number | null {
+  for (let i = fromIdx; i < tokens.length - sequence.length; i++) {
+    let match = true;
+    for (let j = 0; j < sequence.length; j++) {
+      if (tokens[i + j].toUpperCase() !== sequence[j].toUpperCase()) {
+        match = false;
+        break;
+      }
+    }
+    if (match) return i;
+  }
+  return null;
+}
+
+function extractMerchant(descTokens: string[]): string {
+  const joined = descTokens.join(' ').toUpperCase();
+  if (joined.includes('ALIPAYHK')) return 'AlipayHK';
+  if (joined.includes('APPLE PAY')) return 'Apple Pay';
+  if (joined.includes('UNIONPAY QR')) return 'UnionPay QR';
+  if (joined.includes('UNIONPAY MERCHANT')) return 'UnionPay';
+  if (joined.includes('UNIONPAY')) return 'UnionPay';
+  if (joined.includes('ALIPAY')) return 'Alipay';
+  if (joined.includes('TENCENT')) return 'Tencent';
+  if (joined.includes('TENPAY')) return 'Tenpay';
+  if (joined.includes('MEITUAN')) return 'Meituan';
+  if (joined.includes('LUCKIN')) return 'Luckin Coffee';
+  if (joined.includes('IFS PAYMENT')) return 'IFS Payment';
+  if (joined.includes('LAWSON')) return 'Lawson';
+  if (joined.includes('TESLA')) return 'Tesla';
+  if (joined.includes('PINDUODUO')) return 'Pinduoduo';
+  if (joined.includes('YONGHUI')) return 'Yonghui Supermarket';
+  if (joined.includes('ZHUOHAILING')) return 'Zhuohailing';
+  if (joined.includes('SHIFUBAO')) return 'Shifubao';
+  if (joined === 'GD') return 'GD';
+  return descTokens.join(' ');
+}
+
+function extractPaymentMethod(descTokens: string[]): string {
+  const joined = descTokens.join(' ').toUpperCase();
+  if (joined.includes('APPLE PAY')) return 'Apple Pay';
+  if (joined.includes('UNIONPAY QR')) return 'UnionPay QR';
+  if (joined.includes('ALIPAY') && !joined.includes('ALIPAYHK')) return 'Alipay';
+  if (joined.includes('ALIPAYHK')) return 'AlipayHK';
+  if (joined.includes('TENCENT') || joined.includes('TENPAY')) return 'WeChat Pay';
+  if (joined.includes('MEITUAN')) return 'Meituan Pay';
+  if (joined.includes('IFS PAYMENT')) return 'IFS Payment';
+  return 'Other';
+}
+
+function extractRegion(descTokens: string[], currency: 'HKD' | 'CNY'): string {
+  if (currency === 'CNY') return 'China';
+  const joined = descTokens.join(' ').toUpperCase();
+  if (joined.includes('HKG') || joined.includes(' HK ')) return 'Hong Kong';
+  if (joined.includes('MACAU') || joined.includes('MOP')) return 'Macau';
+  if (joined.includes('CHN') || joined.includes(' CN ')) return 'China';
+  return 'Other';
+}
+
 function parseTransactions(
-  lines: string[],
+  tokens: string[],
+  startIdx: number,
+  endIdx: number,
   currency: 'HKD' | 'CNY',
   year: number
 ): Transaction[] {
   const transactions: Transaction[] = [];
-  let i = 0;
+  let i = startIdx;
 
-  while (i < lines.length) {
-    const line = lines[i];
-    const dateMatch = line.match(DATE_RE);
-
-    if (!dateMatch) {
+  while (i < endIdx - 3) {
+    if (!isDateToken(tokens[i]) || !isDateToken(tokens[i + 1])) {
       i++;
       continue;
     }
 
-    const postDate = dateMatch[1];
-    const transDate = dateMatch[2];
-    let descPart = line.slice(dateMatch[0].length).trim();
+    const postDate = tokens[i];
+    const transDate = tokens[i + 1];
+    let j = i + 2;
 
-    const amountMatch = descPart.match(AMOUNT_RE);
-    if (!amountMatch) {
-      i++;
-      continue;
+    const descTokens: string[] = [];
+    let amountParsed: { amount: number; isCredit: boolean } | null = null;
+
+    while (j < endIdx) {
+      const token = tokens[j];
+      const parsed = parseAmountToken(token);
+      if (parsed && parsed.amount >= 0.01) {
+        let isCredit = parsed.isCredit;
+        if (!isCredit && j + 1 < endIdx && tokens[j + 1] === 'CR') {
+          isCredit = true;
+          j++;
+        }
+        amountParsed = { amount: parsed.amount, isCredit };
+        j++;
+        break;
+      }
+      if (isDateToken(token) && j > i + 2) {
+        break;
+      }
+      descTokens.push(token);
+      j++;
     }
 
-    const descText = descPart.slice(0, descPart.lastIndexOf(amountMatch[0])).trim();
-    const { amount, isCredit } = parseAmount(amountMatch[0]);
+    if (amountParsed && descTokens.length > 0) {
+      const description = descTokens.join(' ');
+      const merchant = extractMerchant(descTokens);
+      const paymentMethod = extractPaymentMethod(descTokens);
+      const region = extractRegion(descTokens, currency);
 
-    const description = descText;
-    const merchant = extractMerchant(descText);
-    const paymentMethod = extractPaymentMethod(descText);
-    const region = extractRegion(descText, currency);
+      transactions.push({
+        postDate: parseDate(postDate, year),
+        transDate: parseDate(transDate, year),
+        description,
+        amount: amountParsed.amount,
+        currency,
+        isCredit: amountParsed.isCredit,
+        merchant,
+        paymentMethod,
+        region,
+      });
 
-    transactions.push({
-      postDate: parseDate(postDate, year),
-      transDate: parseDate(transDate, year),
-      description,
-      amount,
-      currency,
-      isCredit,
-      merchant,
-      paymentMethod,
-      region,
-    });
+      const TRAILING_STOP_WORDS = new Set([
+        'Note:', 'REGISTRATION', 'REWARDCASH', 'HSBC', 'STATEMENT', 'THE', 'FOR',
+        'MARKETING', 'WELCOME', 'Apple', 'REGISTERED', '*****', '****',
+        'Change', 'If', 'We', 'Accrual', 'Information', 'Statement', 'Pulse',
+        'Account', 'Card', 'Minimum', 'Please', 'Overdue', 'Total', 'Post',
+      ]);
 
-    i++;
+      const trailing: string[] = [];
+      while (j < endIdx && !isDateToken(tokens[j])) {
+        if (TRAILING_STOP_WORDS.has(tokens[j])) break;
+        trailing.push(tokens[j]);
+        j++;
+      }
+      if (trailing.length > 0 && transactions.length > 0) {
+        const last = transactions[transactions.length - 1];
+        last.description = (last.description + ' ' + trailing.join(' ')).trim();
+        const trailingMethod = extractPaymentMethod(trailing);
+        if (trailingMethod !== 'Other') {
+          last.paymentMethod = trailingMethod;
+        }
+        const trailingMerchant = extractMerchant(trailing);
+        if (trailingMerchant && trailingMethod !== 'Other') {
+          last.merchant = trailingMerchant;
+        }
+      }
+
+      i = j;
+    } else {
+      i++;
+    }
   }
 
   return transactions;
 }
 
-function extractMerchant(desc: string): string {
-  const upper = desc.toUpperCase();
-  if (upper.includes('ALIPAY')) return 'Alipay';
-  if (upper.includes('UNIONPAY')) return 'UnionPay';
-  if (upper.includes('TENCENT')) return 'Tencent';
-  if (upper.includes('MEITUAN')) return 'Meituan';
-  if (upper.includes('APPLE PAY')) return 'Apple Pay';
-  if (upper.includes('LUCKIN')) return 'Luckin Coffee';
-  if (upper.includes('TENPAY')) return 'Tenpay';
-  if (upper.includes('IFS PAYMENT')) return 'IFS Payment';
-  if (upper.includes('LAWSON')) return 'Lawson';
-  if (upper.includes('TESLA')) return 'Tesla';
-  if (upper.includes('PINDUODUO')) return 'Pinduoduo';
-  if (upper.includes('GD ')) return 'GD';
-  if (upper.includes('YONGHUI')) return 'Yonghui Supermarket';
-  if (upper.includes('ZHUOHAILING')) return 'Zhuohailing';
-  if (upper.includes('SHIFUBAO')) return 'Shifubao';
-  if (upper.includes('ALIPAYHK')) return 'AlipayHK';
-  return desc.split(/\s{2,}/)[0] || desc;
-}
-
-function extractPaymentMethod(desc: string): string {
-  const upper = desc.toUpperCase();
-  if (upper.includes('APPLE PAY') || upper.includes('APPLE PAY-MOBILE')) return 'Apple Pay';
-  if (upper.includes('UNIONPAY QR')) return 'UnionPay QR';
-  if (upper.includes('ALIPAY') && !upper.includes('ALIPAYHK')) return 'Alipay';
-  if (upper.includes('ALIPAYHK')) return 'AlipayHK';
-  if (upper.includes('TENCENT') || upper.includes('TENPAY')) return 'WeChat Pay';
-  if (upper.includes('MEITUAN')) return 'Meituan Pay';
-  if (upper.includes('IFS PAYMENT')) return 'IFS Payment';
-  return 'Other';
-}
-
-function extractRegion(desc: string, currency: 'HKD' | 'CNY'): string {
-  if (currency === 'CNY') return 'China';
-  const upper = desc.toUpperCase();
-  if (upper.includes('HK')) return 'Hong Kong';
-  if (upper.includes('MACAU') || upper.includes('MOP')) return 'Macau';
-  if (upper.includes('CN') || upper.includes('CHN')) return 'China';
-  return 'Other';
-}
-
 export function parseStatementPDF(text: string): StatementData[] {
   const year = extractStatementYear(text);
+  const tokens = tokenize(text);
   const statements: StatementData[] = [];
 
-  const hkdMatch = text.match(
-    /Account\s+number\s+.*?(\d{4}\s+\d{4}\s+\d{4}\s+\d{4})\s+HKD.*?Statement\s+balance.*?(HKD[\d,]+\.?\d*)/is
-  );
-  const cnyMatch = text.match(
-    /Account\s+number\s+.*?(\d{4}\s+\d{4}\s+\d{4}\s+\d{4})\s+RMB.*?Statement\s+balance.*?(CNY[\d,]+\.?\d*)/is
-  );
-
-  const cardTypeMatch = text.match(/PULSE\s+DUALCURRENCY/i);
   const statementDateMatch = text.match(/Statement\s+Date.*?(\d{2}\s+[A-Z]{3}\s+\d{4})/i);
-  const creditLimitMatch = text.match(/Credit\s+Limit.*?(HKD[\d,]+\.?\d*)/i);
-
-  const cardType = cardTypeMatch ? 'Pulse DualCurrency' : 'Unknown';
   const statementDate = statementDateMatch ? statementDateMatch[1] : '';
-  const creditLimit = creditLimitMatch
-    ? parseFloat(creditLimitMatch[1].replace(/[^\d.]/g, ''))
-    : 0;
 
-  if (hkdMatch) {
-    const accountNumber = hkdMatch[1].replace(/\s+/g, '');
-    const balanceStr = hkdMatch[2].replace(/[^\d.]/g, '');
-    const statementBalance = parseFloat(balanceStr);
+  const firstPostDateIdx = findTokenSequence(tokens, 0, ['Post', 'date']);
+  if (firstPostDateIdx === null) return statements;
 
-    const hkdSection = extractAccountSection(text, accountNumber, 'HKD');
-    const hkdLines = hkdSection.split('\n');
-    const transactions = parseTransactions(hkdLines, 'HKD', year);
-    const rewardCashSummary = parseRewardCashSummary(hkdLines, 'HKD') ?? undefined;
+  const rmbSubAccountIdx = findTokenSequence(tokens, 0, ['RMB', 'Sub-account']);
+  const cnyPostDateIdx = rmbSubAccountIdx
+    ? findTokenSequence(tokens, rmbSubAccountIdx, ['Post', 'date'])
+    : null;
 
-    const prevBalanceMatch = hkdSection.match(/PREVIOUS\s+BALANCE[\s\S]*?([\d,]+\.?\d{2})/);
-    const minPayMatch = hkdSection.match(/Current\s+minimum\s+payment\s+due.*?([\d,]+\.?\d{2})/);
-    const dueDateMatch = hkdSection.match(/Please\s+pay\s+by.*?(\d{2}\s+[A-Z]{3}\s+\d{4})/i);
+  const hkdEndIdx = cnyPostDateIdx ?? tokens.length;
+  const cnyEndIdx = cnyPostDateIdx
+    ? findTokenSequence(tokens, cnyPostDateIdx, ['FEES', 'AND', 'CHARGES', 'SUMMARY']) ?? tokens.length
+    : tokens.length;
+
+  if (firstPostDateIdx !== null) {
+    const prevBalanceIdx = findTokenSequence(tokens, firstPostDateIdx, ['PREVIOUS', 'BALANCE']);
+    let previousBalance = 0;
+    if (prevBalanceIdx) {
+      const prevToken = tokens[prevBalanceIdx + 2] || tokens[prevBalanceIdx + 1];
+      if (prevToken) previousBalance = parseFloat(prevToken.replace(/,/g, '')) || 0;
+    }
+
+    const rewardIdx = findTokenSequence(tokens, firstPostDateIdx, ['REWARDCASH', 'SUMMARY']);
+    const transactions = parseTransactions(tokens, firstPostDateIdx, hkdEndIdx, 'HKD', year);
+    const { summary: rewardCashSummary } = rewardIdx && rewardIdx < hkdEndIdx
+      ? parseRewardCashSummary(tokens, rewardIdx)
+      : { summary: null };
+
+    const minPayIdx = findTokenSequence(tokens, firstPostDateIdx, ['Current', 'minimum', 'payment']);
+    let minimumPayment = 0;
+    if (minPayIdx) {
+      const minToken = tokens[minPayIdx + 3] || tokens[minPayIdx + 2];
+      if (minToken) minimumPayment = parseFloat(minToken.replace(/,/g, '')) || 0;
+    }
+
+    const dueDateIdx = findTokenSequence(tokens, firstPostDateIdx, ['Please', 'pay', 'by']);
+    let paymentDueDate = '';
+    if (dueDateIdx) {
+      paymentDueDate = `${tokens[dueDateIdx + 3] || ''} ${tokens[dueDateIdx + 4] || ''} ${tokens[dueDateIdx + 5] || ''}`.trim();
+    }
 
     statements.push({
-      cardType,
+      cardType: 'Pulse DualCurrency',
       statementDate,
-      previousBalance: prevBalanceMatch ? parseFloat(prevBalanceMatch[1].replace(/,/g, '')) : 0,
+      previousBalance,
       currency: 'HKD',
       transactions,
-      rewardCashSummary,
-      minimumPayment: minPayMatch ? parseFloat(minPayMatch[1].replace(/,/g, '')) : 0,
-      paymentDueDate: dueDateMatch ? dueDateMatch[1] : '',
+      rewardCashSummary: rewardCashSummary ?? undefined,
+      minimumPayment,
+      paymentDueDate,
     });
   }
 
-  if (cnyMatch) {
-    const accountNumber = cnyMatch[1].replace(/\s+/g, '');
-    const balanceStr = cnyMatch[2].replace(/[^\d.]/g, '');
-    const statementBalance = parseFloat(balanceStr);
+  if (cnyPostDateIdx !== null) {
+    const prevBalanceIdx = findTokenSequence(tokens, cnyPostDateIdx, ['PREVIOUS', 'BALANCE']);
+    let previousBalance = 0;
+    if (prevBalanceIdx) {
+      const prevToken = tokens[prevBalanceIdx + 2] || tokens[prevBalanceIdx + 1];
+      if (prevToken) previousBalance = parseFloat(prevToken.replace(/,/g, '')) || 0;
+    }
 
-    const cnySection = extractAccountSection(text, accountNumber, 'CNY');
-    const cnyLines = cnySection.split('\n');
-    const transactions = parseTransactions(cnyLines, 'CNY', year);
-    const rewardCashSummary = parseRewardCashSummary(cnyLines, 'CNY') ?? undefined;
+    const transactions = parseTransactions(tokens, cnyPostDateIdx, cnyEndIdx, 'CNY', year);
 
-    const prevBalanceMatch = cnySection.match(/PREVIOUS\s+BALANCE[\s\S]*?([\d,]+\.?\d{2})/);
-    const minPayMatch = cnySection.match(/Current\s+minimum\s+payment\s+due.*?([\d,]+\.?\d{2})/);
-    const dueDateMatch = cnySection.match(/Please\s+pay\s+by.*?(\d{2}\s+[A-Z]{3}\s+\d{4})/i);
+    const rewardIdx = findTokenSequence(tokens, cnyPostDateIdx, ['REWARDCASH', 'SUMMARY']);
+    const { summary: rewardCashSummary } = rewardIdx && rewardIdx < cnyEndIdx
+      ? parseRewardCashSummary(tokens, rewardIdx)
+      : { summary: null };
+
+    const minPayIdx = findTokenSequence(tokens, cnyPostDateIdx, ['Current', 'minimum', 'payment']);
+    let minimumPayment = 0;
+    if (minPayIdx) {
+      const minToken = tokens[minPayIdx + 3] || tokens[minPayIdx + 2];
+      if (minToken) minimumPayment = parseFloat(minToken.replace(/,/g, '')) || 0;
+    }
+
+    const dueDateIdx = findTokenSequence(tokens, cnyPostDateIdx, ['Please', 'pay', 'by']);
+    let paymentDueDate = '';
+    if (dueDateIdx) {
+      paymentDueDate = `${tokens[dueDateIdx + 3] || ''} ${tokens[dueDateIdx + 4] || ''} ${tokens[dueDateIdx + 5] || ''}`.trim();
+    }
 
     statements.push({
-      cardType,
+      cardType: 'Pulse DualCurrency',
       statementDate,
-      previousBalance: prevBalanceMatch ? parseFloat(prevBalanceMatch[1].replace(/,/g, '')) : 0,
+      previousBalance,
       currency: 'CNY',
       transactions,
-      rewardCashSummary,
-      minimumPayment: minPayMatch ? parseFloat(minPayMatch[1].replace(/,/g, '')) : 0,
-      paymentDueDate: dueDateMatch ? dueDateMatch[1] : '',
+      rewardCashSummary: rewardCashSummary ?? undefined,
+      minimumPayment,
+      paymentDueDate,
     });
   }
 
   return statements;
-}
-
-function extractAccountSection(text: string, accountNumber: string, currency: 'HKD' | 'CNY'): string {
-  const normalizedAccount = accountNumber.replace(/\s+/g, ' ').trim();
-  const lines = text.split('\n');
-  const startIdx = lines.findIndex((l) => l.includes(normalizedAccount) && l.includes(currency === 'HKD' ? 'HKD' : 'RMB'));
-  if (startIdx === -1) return '';
-
-  const sectionLines: string[] = [];
-  for (let i = startIdx; i < lines.length; i++) {
-    const line = lines[i];
-    if (
-      i > startIdx + 5 &&
-      (line.match(/Account\s+number\s+.*?\d{4}\s+\d{4}\s+\d{4}\s+\d{4}/) ||
-        line.match(/^\s*Page\s+\d+\s*\/\s*\d+/))
-    ) {
-      break;
-    }
-    sectionLines.push(line);
-  }
-  return sectionLines.join('\n');
 }
