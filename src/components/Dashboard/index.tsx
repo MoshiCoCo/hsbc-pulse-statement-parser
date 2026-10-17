@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Card, Grid, Statistic, Skeleton, Alert, Modal, Button } from '@arco-design/web-react';
 import { IconLanguage, IconSun, IconMoon } from '@arco-design/web-react/icon';
@@ -36,13 +36,16 @@ const Dashboard: React.FC = () => {
 
   const hasData = statements.length > 0;
   const [privacyVisible, setPrivacyVisible] = useState(true);
+  const parsedFileNames = useRef<Set<string>>(new Set());
 
   const handleFilesParsed = useCallback(
     async (files: File[]) => {
+      const fresh = files.filter((f) => !parsedFileNames.current.has(f.name));
+      if (fresh.length === 0) return;
       dispatch(setLoading(true));
       try {
         let allParsed: StatementData[] = [];
-        for (const file of files) {
+        for (const file of fresh) {
           const parsed = await parsePDFFromFile(file);
           allParsed = allParsed.concat(parsed);
         }
@@ -50,6 +53,7 @@ const Dashboard: React.FC = () => {
           dispatch(setError('No statement data found in the uploaded files.'));
           return;
         }
+        fresh.forEach((f) => parsedFileNames.current.add(f.name));
         dispatch(addStatements(allParsed));
 
         const allTxns = allParsed.flatMap((s) => s.transactions);
