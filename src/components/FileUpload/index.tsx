@@ -1,50 +1,57 @@
-import React, { useCallback } from 'react';
-import { Upload, Message } from '@arco-design/web-react';
+import React, { useRef, useCallback } from 'react';
+import { Button } from '@arco-design/web-react';
 import { IconUpload } from '@arco-design/web-react/icon';
-import locale from '@/locale';
+import { useLocale } from '@/locale/LocaleContext';
+
+const MAX_SIZE = 10 * 1024 * 1024;
 
 interface FileUploadProps {
-  onFileParsed: (file: File) => void;
+  onFilesParsed: (files: File[]) => Promise<void>;
   loading: boolean;
 }
 
-const FileUploadComponent: React.FC<FileUploadProps> = ({ onFileParsed, loading }) => {
-  const customRequest = useCallback(
-    (option: any) => {
-      const { fileItem, onSuccess, onError } = option;
-      const file = fileItem.file as File;
+const FileUploadComponent: React.FC<FileUploadProps> = ({ onFilesParsed, loading }) => {
+  const { t } = useLocale();
+  const inputRef = useRef<HTMLInputElement>(null);
 
-      if (!file.name.toLowerCase().endsWith('.pdf')) {
-        onError(fileItem);
-        Message.error('Please upload a PDF file');
-        return;
+  const handleChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const valid = files.filter((f) => {
+        if (!f.name.toLowerCase().endsWith('.pdf')) return false;
+        if (f.size > MAX_SIZE) return false;
+        return true;
+      });
+
+      if (valid.length > 0) {
+        await onFilesParsed(valid);
       }
-
-      onFileParsed(file);
-      onSuccess(fileItem);
+      e.target.value = '';
     },
-    [onFileParsed]
+    [onFilesParsed]
   );
 
   return (
-    <Upload
-      drag
-      customRequest={customRequest}
-      accept=".pdf"
-      showUploadList={false}
-      disabled={loading}
-      style={{ width: '100%' }}
-    >
-      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <IconUpload style={{ fontSize: 48, color: '#165DFF', marginBottom: 16 }} />
-        <div style={{ fontSize: 16, color: '#1D2129', marginBottom: 8 }}>
-          {loading ? locale['fileUpload.processing'] : locale['fileUpload.dragText']}
-        </div>
-        <div style={{ fontSize: 13, color: '#86909C' }}>
-          {locale['fileUpload.supportText']}
-        </div>
-      </div>
-    </Upload>
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleChange}
+      />
+      <Button
+        type="primary"
+        icon={<IconUpload />}
+        loading={loading}
+        onClick={() => inputRef.current?.click()}
+      >
+        {t('fileUpload.buttonText')}
+      </Button>
+    </>
   );
 };
 

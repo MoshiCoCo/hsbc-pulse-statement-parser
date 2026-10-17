@@ -26,9 +26,20 @@ function reducer(state = initialState, action: Action): AppState {
     case 'SET_ERROR':
       return { ...state, loading: false, error: action.payload };
     case 'ADD_STATEMENTS': {
-      const statements: StatementData[] = action.payload;
-      const allTransactions = statements.flatMap((s) => s.transactions);
-      return { ...state, statements, allTransactions, loading: false };
+      const incoming: StatementData[] = action.payload;
+      const merged = [...state.statements];
+      for (const s of incoming) {
+        const idx = merged.findIndex(
+          (e) => e.currency === s.currency && e.statementDate === s.statementDate
+        );
+        if (idx >= 0) {
+          merged[idx] = { ...merged[idx], transactions: [...merged[idx].transactions, ...s.transactions] };
+        } else {
+          merged.push(s);
+        }
+      }
+      const allTransactions = merged.flatMap((s) => s.transactions);
+      return { ...state, statements: merged, allTransactions, loading: false };
     }
     case 'SET_REWARDS': {
       const rewards: TransactionReward[] = action.payload;

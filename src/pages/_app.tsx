@@ -4,13 +4,19 @@ import { ConfigProvider } from '@arco-design/web-react';
 import '@arco-design/web-react/dist/css/arco.css';
 import { store } from '@/store';
 import '@/style/global.css';
+import { LocaleProvider } from '@/locale/LocaleContext';
+import { ThemeProvider } from '@/theme/ThemeContext';
 
 function MyApp({ Component, pageProps }: any) {
   return (
     <Provider store={store}>
-      <ConfigProvider>
-        <Component {...pageProps} />
-      </ConfigProvider>
+      <LocaleProvider>
+        <ThemeProvider>
+          <ConfigProvider>
+            <Component {...pageProps} />
+          </ConfigProvider>
+        </ThemeProvider>
+      </LocaleProvider>
     </Provider>
   );
 }
