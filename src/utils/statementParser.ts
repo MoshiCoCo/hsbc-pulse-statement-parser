@@ -105,23 +105,24 @@ function findTokenSequence(tokens: string[], fromIdx: number, sequence: string[]
 
 function extractMerchant(descTokens: string[]): string {
   const joined = descTokens.join(' ').toUpperCase();
-  if (joined.includes('ALIPAYHK')) return 'AlipayHK';
-  if (joined.includes('APPLE PAY')) return 'Apple Pay';
-  if (joined.includes('UNIONPAY QR')) return 'UnionPay QR';
-  if (joined.includes('UNIONPAY MERCHANT')) return 'UnionPay';
-  if (joined.includes('UNIONPAY')) return 'UnionPay';
-  if (joined.includes('ALIPAY')) return 'Alipay';
+  // Real merchants take precedence over payment channels (Apple Pay / UnionPay QR etc.)
   if (joined.includes('TENCENT')) return 'Tencent';
   if (joined.includes('TENPAY')) return 'Tenpay';
   if (joined.includes('MEITUAN')) return 'Meituan';
   if (joined.includes('LUCKIN')) return 'Luckin Coffee';
-  if (joined.includes('IFS PAYMENT')) return 'IFS Payment';
   if (joined.includes('LAWSON')) return 'Lawson';
   if (joined.includes('TESLA')) return 'Tesla';
   if (joined.includes('PINDUODUO')) return 'Pinduoduo';
   if (joined.includes('YONGHUI')) return 'Yonghui Supermarket';
   if (joined.includes('ZHUOHAILING')) return 'Zhuohailing';
   if (joined.includes('SHIFUBAO')) return 'Shifubao';
+  if (joined.includes('ALIPAYHK')) return 'AlipayHK';
+  if (joined.includes('IFS PAYMENT')) return 'IFS Payment';
+  if (joined.includes('APPLE PAY')) return 'Apple Pay';
+  if (joined.includes('UNIONPAY QR')) return 'UnionPay QR';
+  if (joined.includes('UNIONPAY MERCHANT')) return 'UnionPay';
+  if (joined.includes('UNIONPAY')) return 'UnionPay';
+  if (joined.includes('ALIPAY')) return 'Alipay';
   if (joined === 'GD') return 'GD';
   return descTokens.join(' ');
 }
@@ -230,8 +231,9 @@ function parseTransactions(
         if (trailingMethod !== 'Other') {
           last.description = (last.description + ' ' + trailing.join(' ')).trim();
           last.paymentMethod = trailingMethod;
-          const trailingMerchant = extractMerchant(trailing);
-          if (trailingMerchant) last.merchant = trailingMerchant;
+          // Re-extract merchant from the full merged description so real
+          // merchants (e.g. "tencent") win over trailing payment markers
+          last.merchant = extractMerchant(last.description.split(/\s+/));
         }
       }
 

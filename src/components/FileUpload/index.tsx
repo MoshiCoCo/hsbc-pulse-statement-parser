@@ -1,6 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { Button } from '@arco-design/web-react';
-import { IconUpload } from '@arco-design/web-react/icon';
+import { IconUpload, IconLoading } from '@arco-design/web-react/icon';
 import { useLocale } from '@/locale/LocaleContext';
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -43,14 +42,15 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({ onFilesParsed, loading
         style={{ display: 'none' }}
         onChange={handleChange}
       />
-      <Button
-        type="primary"
-        icon={<IconUpload />}
-        loading={loading}
+      <button
+        type="button"
+        className="nav-icon-btn"
+        disabled={loading}
+        title={t('fileUpload.buttonText')}
         onClick={() => inputRef.current?.click()}
       >
-        {t('fileUpload.buttonText')}
-      </Button>
+        {loading ? <IconLoading spin /> : <IconUpload />}
+      </button>
     </>
   );
 };

@@ -17,8 +17,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    document.body.style.backgroundColor = theme === 'dark' ? '#17171a' : '#ffffff';
-    document.body.style.color = theme === 'dark' ? '#f6f6f6' : '#1d2129';
+    document.body.setAttribute('arco-theme', theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

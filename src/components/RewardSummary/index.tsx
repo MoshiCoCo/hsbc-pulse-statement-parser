@@ -3,7 +3,7 @@ import { Card, Grid, Statistic, Tag } from '@arco-design/web-react';
 import type { TransactionReward } from '@/types/statement';
 import { aggregateRewards } from '@/utils/rewardCalculator';
 import { useLocale } from '@/locale/LocaleContext';
-import { useTheme } from '@/theme/ThemeContext';
+
 
 const { Row, Col } = Grid;
 
@@ -24,8 +24,6 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
   applePayQrCapRemaining,
 }) => {
   const { t } = useLocale();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
   const cnyRewards = rewards.filter((r) => r.transaction.currency === 'CNY');
   const aggregated = aggregateRewards(cnyRewards);
@@ -35,13 +33,6 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
 
   const redHotUsed = RED_HOT_CAP - redHotCapRemaining;
   const applePayQrUsed = APPLE_PAY_QR_CAP - applePayQrCapRemaining;
-
-  const cardStyle = {
-    backgroundColor: isDark ? '#232324' : '#ffffff',
-    borderColor: isDark ? '#333' : '#e5e6eb',
-    display: 'flex',
-    flexDirection: 'column' as const,
-  };
 
   const titleStyle = {
     minHeight: '48px',
@@ -60,12 +51,12 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
+      <h3 className="section-title">
         {t('reward.summary')}
       </h3>
       <Row gutter={ROW_GUTTER}>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="reward-card" style={cardStyle}>
+          <Card className="reward-card">
             <div style={{ flex: 1 }}>
               <Statistic
                 title={<div style={titleStyle}>{t('reward.totalReward')}</div>}
@@ -74,14 +65,14 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
               />
             </div>
             <div style={valueContainerStyle}>
-              <div style={{ fontSize: 12, color: '#86909C' }}>
+              <div style={{ fontSize: 12, color: 'var(--color-text-3)' }}>
                 {t('reward.effectiveRate')}: {(aggregated.totalReward / aggregated.cnySpend * 100).toFixed(2)}%
               </div>
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="reward-card" style={cardStyle}>
+          <Card className="reward-card">
             <div style={{ flex: 1 }}>
               <Statistic
                 title={
@@ -96,14 +87,14 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
               />
             </div>
             <div style={valueContainerStyle}>
-              <div style={{ fontSize: 12, color: '#86909C' }}>
+              <div style={{ fontSize: 12, color: 'var(--color-text-3)' }}>
                 {aggregated.totalCount} {t('reward.transactions')}
               </div>
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="reward-card" style={cardStyle}>
+          <Card className="reward-card">
             <div style={{ flex: 1 }}>
               <Statistic
                 title={
@@ -118,14 +109,14 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
               />
             </div>
             <div style={valueContainerStyle}>
-              <div style={{ fontSize: 12, color: '#86909C' }}>
+              <div style={{ fontSize: 12, color: 'var(--color-text-3)' }}>
                 {redHotUsed.toFixed(0)} / {RED_HOT_CAP.toLocaleString()}
               </div>
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="reward-card" style={cardStyle}>
+          <Card className="reward-card">
             <div style={{ flex: 1 }}>
               <Statistic
                 title={
@@ -140,7 +131,7 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
               />
             </div>
             <div style={valueContainerStyle}>
-              <div style={{ fontSize: 12, color: '#86909C' }}>
+              <div style={{ fontSize: 12, color: 'var(--color-text-3)' }}>
                 {applePayQrUsed.toFixed(0)} / {APPLE_PAY_QR_CAP.toLocaleString()}
               </div>
             </div>
@@ -150,7 +141,7 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
       {aggregated.totalMeituanExtra > 0 && (
         <Row gutter={ROW_GUTTER} style={{ marginTop: 16 }}>
           <Col xs={24} sm={12} lg={6}>
-            <Card className="reward-card" style={cardStyle}>
+            <Card className="reward-card">
               <div style={{ flex: 1 }}>
                 <Statistic
                   title={
@@ -165,7 +156,7 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
                 />
               </div>
               <div style={valueContainerStyle}>
-                <div style={{ fontSize: 12, color: '#86909C' }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-3)' }}>
                   {aggregated.qualifiedMeituanExtraCount} {t('reward.transactions')}
                 </div>
               </div>

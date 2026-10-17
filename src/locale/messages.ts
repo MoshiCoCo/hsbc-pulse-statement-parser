@@ -21,7 +21,6 @@ export const enUS = {
   'dashboard.used': 'Used',
   'transaction.postDate': 'Post Date',
   'transaction.transDate': 'Trans Date',
-  'transaction.description': 'Description',
   'transaction.amount': 'Amount',
   'transaction.merchant': 'Merchant',
   'transaction.paymentMethod': 'Payment Method',
@@ -63,6 +62,12 @@ export const enUS = {
   'theme.light': 'Light',
   'theme.dark': 'Dark',
   'lang.switch': '中文',
+  'privacy.title': 'Privacy & Disclaimer',
+  'privacy.local': 'All statements are parsed entirely in your browser. No information is uploaded and this app makes no network calls whatsoever.',
+  'privacy.affinity': 'This is an unofficial personal tool. It is not affiliated with, endorsed by, or sponsored by HSBC.',
+  'privacy.ok': 'Got it',
+  'footer.privacy': 'Statements are parsed locally in your browser — nothing is uploaded and no network calls are made.',
+  'footer.disclaimer': 'This is an unofficial personal tool for analysing your own statements. It is not affiliated with, endorsed by, or sponsored by HSBC.',
 };
 
 export const zhCN = {
@@ -88,7 +93,6 @@ export const zhCN = {
   'dashboard.used': '已用',
   'transaction.postDate': '入账日期',
   'transaction.transDate': '交易日期',
-  'transaction.description': '描述',
   'transaction.amount': '金额',
   'transaction.merchant': '商户',
   'transaction.paymentMethod': '支付方式',
@@ -130,6 +134,12 @@ export const zhCN = {
   'theme.light': '日间',
   'theme.dark': '夜间',
   'lang.switch': 'EN',
+  'privacy.title': '隐私与声明',
+  'privacy.local': '所有账单均在你的浏览器本地解析，不会上传任何信息，也不会发起任何网络请求。',
+  'privacy.affinity': '本工具为个人开发的非官方工具，与汇丰银行（HSBC）无任何关联，也未获其授权或认可。',
+  'privacy.ok': '我知道了',
+  'footer.privacy': '所有账单均在浏览器本地解析，不会上传任何信息，也不会发起任何网络请求。',
+  'footer.disclaimer': '本工具为个人开发的非官方账单分析工具，与汇丰银行（HSBC）无任何关联，也未获其授权或认可。',
 };
 
 export type LocaleKey = keyof typeof enUS;

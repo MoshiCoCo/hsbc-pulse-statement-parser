@@ -3,7 +3,6 @@ import { Button, Modal, Table, Tag, Tooltip } from '@arco-design/web-react';
 import type { ColumnProps } from '@arco-design/web-react/es/Table';
 import type { Transaction, TransactionReward } from '@/types/statement';
 import { useLocale } from '@/locale/LocaleContext';
-import { useTheme } from '@/theme/ThemeContext';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -49,8 +48,6 @@ function splitDescription(desc: string): { merchant: string; marker: string | nu
 
 const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewards }) => {
   const { t } = useLocale();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
   const [detail, setDetail] = useState<TransactionReward | null>(null);
 
   const rewardMap = new Map<string, TransactionReward>();
@@ -84,19 +81,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
     },
     {
       title: t('transaction.merchant'),
-      dataIndex: 'merchant',
-      width: 150,
-      render: (val: string) => val || '-',
-    },
-    {
-      title: t('transaction.paymentMethod'),
-      dataIndex: 'paymentMethod',
-      width: 150,
-      render: (val: string) =>
-        val ? <Tag color={METHOD_COLOR[val] || 'gray'}>{val}</Tag> : '-',
-    },
-    {
-      title: t('transaction.description'),
       dataIndex: 'description',
       width: 260,
       render: (val: string) => {
@@ -107,11 +91,18 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
               {merchant}
             </div>
             {marker && (
-              <div style={{ fontSize: 12, color: '#86909C' }}>{marker}</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-3)' }}>{marker}</div>
             )}
           </div>
         );
       },
+    },
+    {
+      title: t('transaction.paymentMethod'),
+      dataIndex: 'paymentMethod',
+      width: 150,
+      render: (val: string) =>
+        val ? <Tag color={METHOD_COLOR[val] || 'gray'}>{val}</Tag> : '-',
     },
     {
       title: t('transaction.currency'),
@@ -128,7 +119,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       render: (val: number, record) => {
         const sym = CURRENCY_SYMBOL[record.currency] || '';
         return (
-          <span style={{ color: record.isCredit ? '#00B42A' : isDark ? '#f6f6f6' : '#1D2129', fontWeight: 500 }}>
+          <span style={{ color: record.isCredit ? 'var(--color-success-6)' : 'var(--color-text-1)', fontWeight: 500 }}>
             {record.isCredit ? '+' : ''}
             {sym}
             {Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -148,7 +139,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       },
       render: (_: unknown, record) => {
         const r = rewardMap.get(rewardKey(record));
-        if (!r || record.isCredit) return <span style={{ color: '#C9CDD4' }}>-</span>;
+        if (!r || record.isCredit) return <span style={{ color: 'var(--color-text-4)' }}>-</span>;
 
         const tooltipContent = (
           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
@@ -188,9 +179,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       },
       render: (_: unknown, record) => {
         const r = rewardMap.get(rewardKey(record));
-        if (!r || record.isCredit) return <span style={{ color: '#C9CDD4' }}>-</span>;
+        if (!r || record.isCredit) return <span style={{ color: 'var(--color-text-4)' }}>-</span>;
         const rate = (r.breakdown.effectiveRate * 100).toFixed(1);
-        return <span style={{ color: '#86909C' }}>{rate}%</span>;
+        return <span style={{ color: 'var(--color-text-3)' }}>{rate}%</span>;
       },
     },
     {
@@ -214,8 +205,8 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
   ];
 
   const detailRow = (label: string, value: React.ReactNode) => (
-    <div style={{ display: 'flex', padding: '8px 0', borderBottom: `1px solid ${isDark ? '#333' : '#e5e6eb'}` }}>
-      <div style={{ width: 140, flexShrink: 0, color: '#86909C' }}>{label}</div>
+    <div style={{ display: 'flex', padding: '8px 0', borderBottom: '1px solid var(--color-border-2)' }}>
+      <div style={{ width: 140, flexShrink: 0, color: 'var(--color-text-3)' }}>{label}</div>
       <div style={{ wordBreak: 'break-all' }}>{value}</div>
     </div>
   );
@@ -229,7 +220,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
         data={transactions}
         rowKey={(record) => `${record.postDate}-${record.transDate}-${record.description}`}
         pagination={{ pageSize: 20, showTotal: true }}
-        scroll={{ x: 1440 }}
+        scroll={{ x: 1290 }}
       />
       <Modal
         title={t('transaction.detailTitle')}

@@ -1,6 +1,73 @@
+:root {
+  --brand-red: #DB0011;
+  --brand-red-hover: #B8000E;
+  --bg: #F5F6F8;
+  --card-bg: #FFFFFF;
+  --border: #E5E6EB;
+  --text-1: #1D2129;
+  --text-2: #4E5969;
+  --text-3: #86909C;
+  --nav-bg: rgba(255, 255, 255, 0.85);
+  --btn-bg: #FFFFFF;
+  --btn-hover: #F2F3F5;
+  --btn-circle-bg: #F2F3F5;
+  --btn-circle-hover: #E5E6EB;
+  --footer-bg: #0B1B2E;
+  --footer-text: #A9BACB;
+
+  /* Recolor Arco primary (blue -> HSBC red) */
+  --primary-1: #FFF0F1;
+  --primary-2: #FBD1D4;
+  --primary-3: #F7A5AA;
+  --primary-4: #F26B73;
+  --primary-5: #E8323C;
+  --primary-6: #DB0011;
+  --primary-7: #B8000E;
+}
+
+body[arco-theme='dark'] {
+  --bg: #0B1B2E;
+  --card-bg: #102741;
+  --border: #1B3A57;
+  --text-1: #E8EDF3;
+  --text-2: #C0CBD8;
+  --text-3: #8FA3B8;
+  --nav-bg: rgba(11, 27, 46, 0.85);
+  --btn-bg: #14304E;
+  --btn-hover: #1A3A5C;
+  --btn-circle-bg: #1A3A5C;
+  --btn-circle-hover: #22466B;
+  --footer-bg: #071524;
+  --footer-text: #8FA3B8;
+  --primary-5: #F26B73;
+  --primary-6: #E8323C;
+  --primary-7: #DB0011;
+
+  /* Tint Arco's dark greys toward HSBC navy */
+  --color-bg-1: #0B1B2E;
+  --color-bg-2: #102741;
+  --color-bg-3: #102741;
+  --color-bg-4: #16324F;
+  --color-bg-popup: #102741;
+  --color-fill-1: #0E2138;
+  --color-fill-2: #14304E;
+  --color-fill-3: #1A3A5C;
+  --color-fill-4: #22466B;
+  --color-border-1: #12283F;
+  --color-border-2: #1B3A57;
+  --color-border-3: #25507A;
+  --color-border-4: #1B3A57;
+  --color-text-1: #E8EDF3;
+  --color-text-2: #C0CBD8;
+  --color-text-3: #8FA3B8;
+  --color-text-4: #6C849E;
+}
+
 body {
   margin: 0;
   padding: 0;
+  background: var(--bg);
+  color: var(--text-1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
@@ -12,32 +79,151 @@ body {
   box-sizing: border-box;
 }
 
+/* ---------- Sticky top nav ---------- */
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--nav-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Keynote-style light capsule buttons */
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text-1);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-btn:hover {
+  background: var(--btn-hover);
+}
+
+.nav-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.nav-btn-primary {
+  background: var(--brand-red);
+  border-color: var(--brand-red);
+  color: #fff;
+}
+
+.nav-btn-primary:hover {
+  background: var(--brand-red-hover);
+  border-color: var(--brand-red-hover);
+}
+
+/* Keynote-style round icon-only buttons */
+.nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--btn-circle-bg);
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.nav-icon-btn:hover {
+  background: var(--btn-circle-hover);
+}
+
+/* ---------- Page layout ---------- */
 .page-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.dashboard-header h2 {
-  margin: 0;
-  font-size: 20px;
-  line-height: 1.4;
-}
-
-.header-actions {
+.section-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--brand-red);
+}
+
+.app-footer {
+  margin-top: 24px;
+  background: var(--footer-bg);
+  border-top: 3px solid var(--brand-red);
+  padding: 32px 20px;
+}
+
+.app-footer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--footer-text);
+}
+
+/* Reward summary cards: equal heights in a row, tighter on phones */
+.reward-card {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Detail modal should never exceed the phone viewport */
@@ -45,28 +231,28 @@ body {
   max-width: calc(100vw - 24px);
 }
 
-/* Reward summary cards: equal heights in a row, tighter on phones */
-.reward-card {
-  min-height: 180px;
-}
-
-@media (max-width: 768px) {
-  .reward-card {
-    min-height: 140px;
-  }
-}
-
 @media (max-width: 768px) {
   .page-container {
     padding: 12px;
   }
 
-  .dashboard-header {
-    flex-direction: column;
-    align-items: stretch;
+  .app-nav-inner {
+    padding: 10px 12px;
+  }
+
+  .brand-title {
+    font-size: 15px;
   }
 
   .header-actions {
-    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .nav-btn {
+    padding: 0 10px;
+  }
+
+  .reward-card {
+    min-height: 140px;
   }
 }

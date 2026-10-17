@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Card, Grid, Statistic, Skeleton, Alert, Button, Switch } from '@arco-design/web-react';
-import { IconSun, IconMoon, IconLanguage } from '@arco-design/web-react/icon';
+import { Card, Grid, Statistic, Skeleton, Alert, Modal, Button } from '@arco-design/web-react';
+import { IconLanguage, IconSun, IconMoon } from '@arco-design/web-react/icon';
 import type { AppState, StatementData, Transaction } from '@/types/statement';
 import { addStatements, setRewards, setLoading, setError } from '@/store';
 import { parsePDFFromFile } from '@/utils/pdfParser';
@@ -35,6 +35,7 @@ const Dashboard: React.FC = () => {
   const applePayQrCapRemaining = useSelector((state: AppState) => state.applePayQrCapRemaining);
 
   const hasData = statements.length > 0;
+  const [privacyVisible, setPrivacyVisible] = useState(true);
 
   const handleFilesParsed = useCallback(
     async (files: File[]) => {
@@ -83,85 +84,89 @@ const Dashboard: React.FC = () => {
   const cnyCredits = byCurrency(allTransactions.filter((t) => t.isCredit), 'CNY');
 
   const isDark = theme === 'dark';
-  const cardStyle = {
-    backgroundColor: isDark ? '#232324' : '#ffffff',
-    borderColor: isDark ? '#333' : '#e5e6eb',
-  };
-
   return (
-    <div className="page-container">
-      {/* Header */}
-      <div className="dashboard-header">
-        <h2>{t('dashboard.title')}</h2>
-        <div className="header-actions">
-          <FileUploadComponent onFilesParsed={handleFilesParsed} loading={loading} />
-          <Button
-            icon={<IconLanguage />}
-            onClick={toggleLang}
-            style={{ minWidth: 80 }}
-          >
-            {lang === 'en-US' ? '中文' : 'EN'}
-          </Button>
-          <Button
-            icon={isDark ? <IconSun /> : <IconMoon />}
-            onClick={toggleTheme}
-          >
-            {t(isDark ? 'theme.light' : 'theme.dark')}
-          </Button>
+    <>
+      {/* Sticky top nav */}
+      <header className="app-nav">
+        <div className="app-nav-inner">
+          <div className="brand">
+            <span className="brand-title">{t('dashboard.title')}</span>
+          </div>
+          <div className="header-actions">
+            <FileUploadComponent onFilesParsed={handleFilesParsed} loading={loading} />
+            <button
+              type="button"
+              className="nav-icon-btn"
+              onClick={toggleLang}
+              title={lang === 'en-US' ? '中文' : 'English'}
+            >
+              <IconLanguage />
+            </button>
+            <button
+              type="button"
+              className="nav-icon-btn"
+              onClick={toggleTheme}
+              title={t(isDark ? 'theme.light' : 'theme.dark')}
+            >
+              {isDark ? <IconSun /> : <IconMoon />}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
+
+      <div className="page-container">
 
       {error && <Alert type="error" content={error} style={{ marginBottom: 16 }} closable />}
 
       {/* HKD Account Section */}
       <div style={{ marginBottom: 24 }}>
-        <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
+        <h3 className="section-title">
           {t('dashboard.hkdAccount')}
         </h3>
         <Row gutter={ROW_GUTTER}>
           {hasData ? (
             <>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title={t('dashboard.totalCharges')}
                     value={sumAmount(hkdCharges)}
                     prefix="HK$"
                     precision={2}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     {hkdCharges.length} transactions
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title={t('dashboard.totalCredits')}
                     value={sumAmount(hkdCredits)}
                     prefix="HK$"
                     precision={2}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     {hkdCredits.length} transactions
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title={t('dashboard.totalRewardsEarned')}
                     value={rewardByCurrency('HKD')}
                     prefix="HK$"
                     precision={0}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     {allRewards.filter((r) => r.transaction.currency === 'HKD').length} transactions
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title="Statement Balance"
                     value={(() => {
@@ -172,7 +177,7 @@ const Dashboard: React.FC = () => {
                     prefix="HK$"
                     precision={2}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     Net balance
                   </div>
                 </Card>
@@ -182,7 +187,7 @@ const Dashboard: React.FC = () => {
             <>
               {[1, 2, 3, 4].map((i) => (
                 <Col {...CARD_COL} key={i}>
-                  <Card style={cardStyle}>
+                  <Card>
                     <Skeleton text={{ rows: 3 }} />
                   </Card>
                 </Col>
@@ -194,53 +199,53 @@ const Dashboard: React.FC = () => {
 
       {/* CNY Account Section */}
       <div style={{ marginBottom: 24 }}>
-        <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
+        <h3 className="section-title">
           {t('dashboard.cnyAccount')}
         </h3>
         <Row gutter={ROW_GUTTER}>
           {hasData ? (
             <>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title={t('dashboard.totalCharges')}
                     value={sumAmount(cnyCharges)}
                     prefix="¥"
                     precision={2}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     {cnyCharges.length} transactions
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title={t('dashboard.totalCredits')}
                     value={sumAmount(cnyCredits)}
                     prefix="¥"
                     precision={2}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     {cnyCredits.length} transactions
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title={t('dashboard.totalRewardsEarned')}
                     value={rewardByCurrency('CNY')}
                     prefix="¥"
                     precision={0}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     {allRewards.filter((r) => r.transaction.currency === 'CNY').length} transactions
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
-                <Card style={cardStyle}>
+                <Card>
                   <Statistic
                     title="Statement Balance"
                     value={(() => {
@@ -251,7 +256,7 @@ const Dashboard: React.FC = () => {
                     prefix="¥"
                     precision={2}
                   />
-                  <div style={{ fontSize: 12, color: '#86909C', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
                     Net balance
                   </div>
                 </Card>
@@ -261,7 +266,7 @@ const Dashboard: React.FC = () => {
             <>
               {[1, 2, 3, 4].map((i) => (
                 <Col {...CARD_COL} key={i}>
-                  <Card style={cardStyle}>
+                  <Card>
                     <Skeleton text={{ rows: 3 }} />
                   </Card>
                 </Col>
@@ -280,13 +285,13 @@ const Dashboard: React.FC = () => {
         />
       ) : (
         <div style={{ marginBottom: 24 }}>
-          <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
+          <h3 className="section-title">
             {t('reward.summary')}
           </h3>
           <Row gutter={ROW_GUTTER}>
             {[1, 2, 3, 4].map((i) => (
               <Col {...CARD_COL} key={i}>
-                <Card style={cardStyle}>
+                <Card>
                   <Skeleton text={{ rows: 3 }} />
                 </Card>
               </Col>
@@ -296,17 +301,42 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Transaction Table */}
-      <Card
-        title={`${t('dashboard.transactions')} (${hasData ? allTransactions.length : 0})`}
-        style={cardStyle}
+      <div style={{ marginBottom: 24 }}>
+        <h3 className="section-title">
+          {t('dashboard.transactions')} ({hasData ? allTransactions.length : 0})
+        </h3>
+        <Card>
+          {hasData ? (
+            <TransactionTable transactions={allTransactions} rewards={allRewards} />
+          ) : (
+            <Skeleton text={{ rows: 8 }} />
+          )}
+        </Card>
+      </div>
+      </div>
+
+      <footer className="app-footer">
+        <div className="app-footer-inner">
+          <div>{t('footer.privacy')}</div>
+          <div>{t('footer.disclaimer')}</div>
+        </div>
+      </footer>
+
+      <Modal
+        simple
+        title={t('privacy.title')}
+        visible={privacyVisible}
+        onCancel={() => setPrivacyVisible(false)}
+        footer={
+          <Button type="primary" onClick={() => setPrivacyVisible(false)}>
+            {t('privacy.ok')}
+          </Button>
+        }
       >
-        {hasData ? (
-          <TransactionTable transactions={allTransactions} rewards={allRewards} />
-        ) : (
-          <Skeleton text={{ rows: 8 }} />
-        )}
-      </Card>
-    </div>
+        <p style={{ marginTop: 0 }}>{t('privacy.local')}</p>
+        <p style={{ marginBottom: 0 }}>{t('privacy.affinity')}</p>
+      </Modal>
+    </>
   );
 };
 
