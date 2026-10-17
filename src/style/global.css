@@ -11,3 +11,62 @@ body {
 * {
   box-sizing: border-box;
 }
+
+.page-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Detail modal should never exceed the phone viewport */
+.arco-modal {
+  max-width: calc(100vw - 24px);
+}
+
+/* Reward summary cards: equal heights in a row, tighter on phones */
+.reward-card {
+  min-height: 180px;
+}
+
+@media (max-width: 768px) {
+  .reward-card {
+    min-height: 140px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 12px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+}

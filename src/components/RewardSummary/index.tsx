@@ -7,6 +7,11 @@ import { useTheme } from '@/theme/ThemeContext';
 
 const { Row, Col } = Grid;
 
+const ROW_GUTTER: [{ xs: number; lg: number }, { xs: number; lg: number }] = [
+  { xs: 12, lg: 16 },
+  { xs: 12, lg: 16 },
+];
+
 interface RewardSummaryProps {
   rewards: TransactionReward[];
   redHotCapRemaining: number;
@@ -34,7 +39,6 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
   const cardStyle = {
     backgroundColor: isDark ? '#232324' : '#ffffff',
     borderColor: isDark ? '#333' : '#e5e6eb',
-    minHeight: '180px',
     display: 'flex',
     flexDirection: 'column' as const,
   };
@@ -59,9 +63,9 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
       <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
         {t('reward.summary')}
       </h3>
-      <Row gutter={16}>
-        <Col span={6}>
-          <Card style={cardStyle}>
+      <Row gutter={ROW_GUTTER}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="reward-card" style={cardStyle}>
             <div style={{ flex: 1 }}>
               <Statistic
                 title={<div style={titleStyle}>{t('reward.totalReward')}</div>}
@@ -76,8 +80,8 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
             </div>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card style={cardStyle}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="reward-card" style={cardStyle}>
             <div style={{ flex: 1 }}>
               <Statistic
                 title={
@@ -98,8 +102,8 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
             </div>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card style={cardStyle}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="reward-card" style={cardStyle}>
             <div style={{ flex: 1 }}>
               <Statistic
                 title={
@@ -120,8 +124,8 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
             </div>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card style={cardStyle}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="reward-card" style={cardStyle}>
             <div style={{ flex: 1 }}>
               <Statistic
                 title={
@@ -144,9 +148,9 @@ const RewardSummary: React.FC<RewardSummaryProps> = ({
         </Col>
       </Row>
       {aggregated.totalMeituanExtra > 0 && (
-        <Row gutter={16} style={{ marginTop: 16 }}>
-          <Col span={6}>
-            <Card style={cardStyle}>
+        <Row gutter={ROW_GUTTER} style={{ marginTop: 16 }}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="reward-card" style={cardStyle}>
               <div style={{ flex: 1 }}>
                 <Statistic
                   title={

@@ -66,6 +66,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       title: t('transaction.postDate'),
       dataIndex: 'postDate',
       width: 120,
+      fixed: 'left',
       sorter: (a, b) => a.postDate.localeCompare(b.postDate),
     },
     {
@@ -195,6 +196,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
     {
       title: '',
       width: 80,
+      fixed: 'right',
       render: (_: unknown, record) => (
         <Button
           type="text"

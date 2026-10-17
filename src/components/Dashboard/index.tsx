@@ -14,6 +14,14 @@ import { useTheme } from '@/theme/ThemeContext';
 
 const { Row, Col } = Grid;
 
+// Horizontal + vertical gutter, tighter on phones
+const ROW_GUTTER: [{ xs: number; lg: number }, { xs: number; lg: number }] = [
+  { xs: 12, lg: 16 },
+  { xs: 12, lg: 16 },
+];
+// 2 cards per row on phones, 4 on desktop
+const CARD_COL = { xs: 12, lg: 6 } as const;
+
 const Dashboard: React.FC = () => {
   const dispatch = useDispatch();
   const { t, toggleLang, lang } = useLocale();
@@ -81,11 +89,11 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 1400, margin: '0 auto' }}>
+    <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2 style={{ margin: 0 }}>{t('dashboard.title')}</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="dashboard-header">
+        <h2>{t('dashboard.title')}</h2>
+        <div className="header-actions">
           <FileUploadComponent onFilesParsed={handleFilesParsed} loading={loading} />
           <Button
             icon={<IconLanguage />}
@@ -110,10 +118,10 @@ const Dashboard: React.FC = () => {
         <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
           {t('dashboard.hkdAccount')}
         </h3>
-        <Row gutter={16}>
+        <Row gutter={ROW_GUTTER}>
           {hasData ? (
             <>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title={t('dashboard.totalCharges')}
@@ -126,7 +134,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title={t('dashboard.totalCredits')}
@@ -139,7 +147,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title={t('dashboard.totalRewardsEarned')}
@@ -152,7 +160,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title="Statement Balance"
@@ -173,7 +181,7 @@ const Dashboard: React.FC = () => {
           ) : (
             <>
               {[1, 2, 3, 4].map((i) => (
-                <Col span={6} key={i}>
+                <Col {...CARD_COL} key={i}>
                   <Card style={cardStyle}>
                     <Skeleton text={{ rows: 3 }} />
                   </Card>
@@ -189,10 +197,10 @@ const Dashboard: React.FC = () => {
         <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
           {t('dashboard.cnyAccount')}
         </h3>
-        <Row gutter={16}>
+        <Row gutter={ROW_GUTTER}>
           {hasData ? (
             <>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title={t('dashboard.totalCharges')}
@@ -205,7 +213,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title={t('dashboard.totalCredits')}
@@ -218,7 +226,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title={t('dashboard.totalRewardsEarned')}
@@ -231,7 +239,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col {...CARD_COL}>
                 <Card style={cardStyle}>
                   <Statistic
                     title="Statement Balance"
@@ -252,7 +260,7 @@ const Dashboard: React.FC = () => {
           ) : (
             <>
               {[1, 2, 3, 4].map((i) => (
-                <Col span={6} key={i}>
+                <Col {...CARD_COL} key={i}>
                   <Card style={cardStyle}>
                     <Skeleton text={{ rows: 3 }} />
                   </Card>
@@ -275,9 +283,9 @@ const Dashboard: React.FC = () => {
           <h3 style={{ marginBottom: 12, color: isDark ? '#f6f6f6' : '#1d2129' }}>
             {t('reward.summary')}
           </h3>
-          <Row gutter={16}>
+          <Row gutter={ROW_GUTTER}>
             {[1, 2, 3, 4].map((i) => (
-              <Col span={6} key={i}>
+              <Col {...CARD_COL} key={i}>
                 <Card style={cardStyle}>
                   <Skeleton text={{ rows: 3 }} />
                 </Card>
