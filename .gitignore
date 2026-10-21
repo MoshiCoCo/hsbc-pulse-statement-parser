@@ -8,3 +8,11 @@ build
 *.log
 .DS_Store
 Thumbs.db
+
+.idea
+tsconfig.tsbuildinfo
+*.qoder.site
+
+# local-only notes, not published
+AGENTS.md
+docs/reward-calculation-rules.md
