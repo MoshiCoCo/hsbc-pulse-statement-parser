@@ -1,5 +1,5 @@
 {
-  "name": "hsbc-rewards",
+  "name": "hsbc-pulse-statement-parser",
   "version": "1.0.0",
   "private": true,
   "scripts": {
