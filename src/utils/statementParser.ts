@@ -30,6 +30,17 @@ function parseAmountToken(token: string): { amount: number; isCredit: boolean } 
   return { amount: num, isCredit };
 }
 
+// The label ("due") sits between the keyword and the value, so scan a few tokens forward
+function parseAmountAfter(tokens: string[], fromIdx: number): number {
+  for (let i = fromIdx; i < fromIdx + 3; i++) {
+    const token = tokens[i];
+    if (!token) break;
+    const num = parseFloat(token.replace(/,/g, ''));
+    if (!isNaN(num)) return num;
+  }
+  return 0;
+}
+
 function tokenize(text: string): string[] {
   return text.split(/\s+/).filter((t) => t.length > 0);
 }
@@ -281,14 +292,11 @@ export function parseStatementPDF(text: string): StatementData[] {
       ? parseRewardCashSummary(tokens, rewardIdx)
       : { summary: null };
 
-    const minPayIdx = findTokenSequence(tokens, firstPostDateIdx, ['Current', 'minimum', 'payment']);
-    let minimumPayment = 0;
-    if (minPayIdx) {
-      const minToken = tokens[minPayIdx + 3] || tokens[minPayIdx + 2];
-      if (minToken) minimumPayment = parseFloat(minToken.replace(/,/g, '')) || 0;
-    }
+    // The HKD "Minimum payment summary" block sits before the first transaction header
+    const minPayIdx = findTokenSequence(tokens, 0, ['Current', 'minimum', 'payment']);
+    const minimumPayment = minPayIdx ? parseAmountAfter(tokens, minPayIdx + 3) : 0;
 
-    const dueDateIdx = findTokenSequence(tokens, firstPostDateIdx, ['Please', 'pay', 'by']);
+    const dueDateIdx = findTokenSequence(tokens, 0, ['Please', 'pay', 'by']);
     let paymentDueDate = '';
     if (dueDateIdx) {
       paymentDueDate = `${tokens[dueDateIdx + 3] || ''} ${tokens[dueDateIdx + 4] || ''} ${tokens[dueDateIdx + 5] || ''}`.trim();
@@ -321,14 +329,10 @@ export function parseStatementPDF(text: string): StatementData[] {
       ? parseRewardCashSummary(tokens, rewardIdx)
       : { summary: null };
 
-    const minPayIdx = findTokenSequence(tokens, cnyPostDateIdx, ['Current', 'minimum', 'payment']);
-    let minimumPayment = 0;
-    if (minPayIdx) {
-      const minToken = tokens[minPayIdx + 3] || tokens[minPayIdx + 2];
-      if (minToken) minimumPayment = parseFloat(minToken.replace(/,/g, '')) || 0;
-    }
+    const minPayIdx = findTokenSequence(tokens, rmbSubAccountIdx ?? 0, ['Current', 'minimum', 'payment']);
+    const minimumPayment = minPayIdx ? parseAmountAfter(tokens, minPayIdx + 3) : 0;
 
-    const dueDateIdx = findTokenSequence(tokens, cnyPostDateIdx, ['Please', 'pay', 'by']);
+    const dueDateIdx = findTokenSequence(tokens, rmbSubAccountIdx ?? 0, ['Please', 'pay', 'by']);
     let paymentDueDate = '';
     if (dueDateIdx) {
       paymentDueDate = `${tokens[dueDateIdx + 3] || ''} ${tokens[dueDateIdx + 4] || ''} ${tokens[dueDateIdx + 5] || ''}`.trim();
