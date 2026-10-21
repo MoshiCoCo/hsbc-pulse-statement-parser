@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button, Modal, Table, Tag, Tooltip } from '@arco-design/web-react';
+import { IconCaretDown, IconCaretUp } from '@arco-design/web-react/icon';
 import type { ColumnProps } from '@arco-design/web-react/es/Table';
 import type { Transaction, TransactionReward } from '@/types/statement';
 import { useLocale } from '@/locale/LocaleContext';
@@ -49,22 +50,56 @@ function splitDescription(desc: string): { merchant: string; marker: string | nu
 const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewards }) => {
   const { t } = useLocale();
   const [detail, setDetail] = useState<TransactionReward | null>(null);
+  const [sortState, setSortState] = useState<{ field?: string; direction?: 'ascend' | 'descend' }>({});
 
-  const rewardMap = new Map<string, TransactionReward>();
-  for (const r of rewards) {
-    const key = `${r.transaction.postDate}-${r.transaction.transDate}-${r.transaction.description}`;
-    rewardMap.set(key, r);
-  }
+  const rewardMap = useMemo(() => {
+    const map = new Map<string, TransactionReward>();
+    for (const r of rewards) {
+      const key = `${r.transaction.postDate}-${r.transaction.transDate}-${r.transaction.description}`;
+      map.set(key, r);
+    }
+    return map;
+  }, [rewards]);
 
   const rewardKey = (tx: Transaction) => `${tx.postDate}-${tx.transDate}-${tx.description}`;
 
+  // 同一商户同日同金额的多笔交易会产生重复描述，rowKey 需要去重
+  const rowKeys = useMemo(() => {
+    const map = new Map<Transaction, string>();
+    const seen = new Map<string, number>();
+    for (const tx of transactions) {
+      const base = rewardKey(tx);
+      const n = seen.get(base) || 0;
+      seen.set(base, n + 1);
+      map.set(tx, n === 0 ? base : `${base}#${n}`);
+    }
+    return map;
+  }, [transactions]);
+
+  const toggleSort = (field: string) => {
+    setSortState((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'ascend' ? 'descend' : 'ascend',
+    }));
+  };
+
+  const sortableTitle = (label: string, field: string) => (
+    <span style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleSort(field)}>
+      {label}
+      {sortState.field === field && (
+        sortState.direction === 'ascend'
+          ? <IconCaretUp style={{ marginLeft: 2, fontSize: 12 }} />
+          : <IconCaretDown style={{ marginLeft: 2, fontSize: 12 }} />
+      )}
+    </span>
+  );
+
   const columns: ColumnProps<Transaction>[] = [
     {
-      title: t('transaction.postDate'),
+      title: sortableTitle(t('transaction.postDate'), 'postDate'),
       dataIndex: 'postDate',
       width: 120,
       fixed: 'left',
-      sorter: (a, b) => a.postDate.localeCompare(b.postDate),
     },
     {
       title: t('transaction.transDate'),
@@ -111,11 +146,10 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       render: (val: string) => <Tag color={val === 'HKD' ? 'red' : 'blue'}>{val}</Tag>,
     },
     {
-      title: t('transaction.amount'),
+      title: sortableTitle(t('transaction.amount'), 'amount'),
       dataIndex: 'amount',
       width: 140,
       align: 'right',
-      sorter: (a, b) => a.amount - b.amount,
       render: (val: number, record) => {
         const sym = CURRENCY_SYMBOL[record.currency] || '';
         return (
@@ -129,14 +163,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       },
     },
     {
-      title: t('transaction.reward'),
+      title: sortableTitle(t('transaction.reward'), 'reward'),
       width: 120,
       align: 'right',
-      sorter: (a, b) => {
-        const ra = rewardMap.get(rewardKey(a));
-        const rb = rewardMap.get(rewardKey(b));
-        return (ra?.breakdown.totalReward || 0) - (rb?.breakdown.totalReward || 0);
-      },
       render: (_: unknown, record) => {
         const r = rewardMap.get(rewardKey(record));
         if (!r || record.isCredit) return <span style={{ color: 'var(--color-text-4)' }}>-</span>;
@@ -169,14 +198,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
       },
     },
     {
-      title: t('transaction.rewardRate'),
+      title: sortableTitle(t('transaction.rewardRate'), 'rewardRate'),
       width: 100,
       align: 'right',
-      sorter: (a, b) => {
-        const ra = rewardMap.get(rewardKey(a));
-        const rb = rewardMap.get(rewardKey(b));
-        return (ra?.breakdown.effectiveRate || 0) - (rb?.breakdown.effectiveRate || 0);
-      },
       render: (_: unknown, record) => {
         const r = rewardMap.get(rewardKey(record));
         if (!r || record.isCredit) return <span style={{ color: 'var(--color-text-4)' }}>-</span>;
@@ -204,6 +228,28 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
     },
   ];
 
+  const sortedTransactions = useMemo(() => {
+    if (!sortState.field || !sortState.direction) return [...transactions];
+    const sorted = [...transactions].sort((a, b) => {
+      let result = 0;
+      if (sortState.field === 'postDate') {
+        result = a.postDate.localeCompare(b.postDate);
+      } else if (sortState.field === 'amount') {
+        result = a.amount - b.amount;
+      } else if (sortState.field === 'reward') {
+        const ra = rewardMap.get(rewardKey(a));
+        const rb = rewardMap.get(rewardKey(b));
+        result = (ra?.breakdown.totalReward || 0) - (rb?.breakdown.totalReward || 0);
+      } else if (sortState.field === 'rewardRate') {
+        const ra = rewardMap.get(rewardKey(a));
+        const rb = rewardMap.get(rewardKey(b));
+        result = (ra?.breakdown.effectiveRate || 0) - (rb?.breakdown.effectiveRate || 0);
+      }
+      return sortState.direction === 'descend' ? -result : result;
+    });
+    return sorted;
+  }, [transactions, sortState, rewardMap]);
+
   const detailRow = (label: string, value: React.ReactNode) => (
     <div style={{ display: 'flex', padding: '8px 0', borderBottom: '1px solid var(--color-border-2)' }}>
       <div style={{ width: 140, flexShrink: 0, color: 'var(--color-text-3)' }}>{label}</div>
@@ -216,9 +262,10 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, rewar
   return (
     <>
       <Table
+        key={`sort-${sortState.field || 'none'}-${sortState.direction || 'none'}`}
         columns={columns}
-        data={transactions}
-        rowKey={(record) => `${record.postDate}-${record.transDate}-${record.description}`}
+        data={sortedTransactions}
+        rowKey={(record) => rowKeys.get(record) || rewardKey(record)}
         pagination={{ pageSize: 20, showTotal: true }}
         scroll={{ x: 1290 }}
       />
