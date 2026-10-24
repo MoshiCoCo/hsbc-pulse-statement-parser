@@ -51,7 +51,7 @@ const Dashboard: React.FC = () => {
           allParsed = allParsed.concat(parsed);
         }
         if (allParsed.length === 0) {
-          dispatch(setError('No statement data found in the uploaded files.'));
+          dispatch(setError(t('dashboard.noDataError')));
           return { parsed: 0, skipped, failed: true };
         }
         fresh.forEach((f) => parsedFileNames.current.add(f.name));
@@ -65,11 +65,11 @@ const Dashboard: React.FC = () => {
         dispatch(setRewards(rewards));
         return { parsed: fresh.length, skipped, failed: false };
       } catch (e: any) {
-        dispatch(setError(e.message || 'Failed to parse PDF'));
+        dispatch(setError(e.message || t('dashboard.parseError')));
         return { parsed: 0, skipped, failed: true };
       }
     },
-    [dispatch, statements, redHotCapRemaining, applePayQrCapRemaining]
+    [dispatch, statements, redHotCapRemaining, applePayQrCapRemaining, t]
   );
 
   const allTransactions = statements.flatMap((s) => s.transactions);
@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {hkdCharges.length} transactions
+                    {hkdCharges.length} {t('reward.transactions')}
                   </div>
                 </Card>
               </Col>
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {hkdCredits.length} transactions
+                    {hkdCredits.length} {t('reward.transactions')}
                   </div>
                 </Card>
               </Col>
@@ -168,14 +168,14 @@ const Dashboard: React.FC = () => {
                     precision={0}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {allRewards.filter((r) => r.transaction.currency === 'HKD').length} transactions
+                    {allRewards.filter((r) => r.transaction.currency === 'HKD').length} {t('reward.transactions')}
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
                 <Card>
                   <Statistic
-                    title="Statement Balance"
+                    title={t('dashboard.statementBalance')}
                     value={(() => {
                       const charges = sumAmount(hkdCharges);
                       const credits = sumAmount(hkdCredits);
@@ -185,7 +185,7 @@ const Dashboard: React.FC = () => {
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    Net balance
+                    {t('dashboard.netBalance')}
                   </div>
                 </Card>
               </Col>
@@ -221,7 +221,7 @@ const Dashboard: React.FC = () => {
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {cnyCharges.length} transactions
+                    {cnyCharges.length} {t('reward.transactions')}
                   </div>
                 </Card>
               </Col>
@@ -234,7 +234,7 @@ const Dashboard: React.FC = () => {
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {cnyCredits.length} transactions
+                    {cnyCredits.length} {t('reward.transactions')}
                   </div>
                 </Card>
               </Col>
@@ -247,14 +247,14 @@ const Dashboard: React.FC = () => {
                     precision={0}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {allRewards.filter((r) => r.transaction.currency === 'CNY').length} transactions
+                    {allRewards.filter((r) => r.transaction.currency === 'CNY').length} {t('reward.transactions')}
                   </div>
                 </Card>
               </Col>
               <Col {...CARD_COL}>
                 <Card>
                   <Statistic
-                    title="Statement Balance"
+                    title={t('dashboard.statementBalance')}
                     value={(() => {
                       const charges = sumAmount(cnyCharges);
                       const credits = sumAmount(cnyCredits);
@@ -264,7 +264,7 @@ const Dashboard: React.FC = () => {
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    Net balance
+                    {t('dashboard.netBalance')}
                   </div>
                 </Card>
               </Col>
