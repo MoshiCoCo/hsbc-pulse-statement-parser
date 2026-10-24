@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Modal, Button } from '@arco-design/web-react';
 import {
   IconUpload,
@@ -9,6 +10,7 @@ import {
 import { useLocale } from '@/locale/LocaleContext';
 
 const MAX_SIZE = 10 * 1024 * 1024;
+const TOAST_MS = 2600;
 
 export interface UploadOutcome {
   /** Files that produced statement data and were not already parsed. */
@@ -30,6 +32,17 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({ onFilesParsed, loading
   const [visible, setVisible] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [outcome, setOutcome] = useState<UploadOutcome | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
+
+  // Arco's imperative Message calls ReactDOM.render, which React 19 removed
+  const showToast = useCallback((message: string) => {
+    window.clearTimeout(toastTimer.current);
+    setToast(message);
+    toastTimer.current = window.setTimeout(() => setToast(null), TOAST_MS);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const submit = useCallback(
     async (files: File[]) => {
@@ -48,10 +61,13 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({ onFilesParsed, loading
         skipped: result.skipped + rejected,
       };
       setOutcome(merged);
-      // Close only on a clean run; otherwise the result lines explain what happened
-      if (merged.parsed > 0 && merged.skipped === 0 && !merged.failed) setVisible(false);
+      // Toast plus auto-close only on a clean run; otherwise the result lines explain what happened
+      if (merged.parsed > 0 && merged.skipped === 0 && !merged.failed) {
+        setVisible(false);
+        showToast(t('fileUpload.success'));
+      }
     },
-    [onFilesParsed]
+    [onFilesParsed, showToast, t]
   );
 
   const close = useCallback(() => {
@@ -162,6 +178,14 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({ onFilesParsed, loading
           </div>
         )}
       </Modal>
+
+      {toast &&
+        createPortal(
+          <div className="upload-toast" role="status">
+            <IconCheckCircle /> {toast}
+          </div>,
+          document.body
+        )}
     </>
   );
 };

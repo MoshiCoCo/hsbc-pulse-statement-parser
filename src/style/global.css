@@ -16,15 +16,19 @@
   --footer-text: #A9BACB;
   --dropzone-bg: #F7F8FA;
   --dropzone-active-bg: #FFF0F1;
+}
 
-  /* Recolor Arco primary (blue -> HSBC red) */
-  --primary-1: #FFF0F1;
-  --primary-2: #FBD1D4;
-  --primary-3: #F7A5AA;
-  --primary-4: #F26B73;
-  --primary-5: #E8323C;
-  --primary-6: #DB0011;
-  --primary-7: #B8000E;
+/* Arco reads these as rgb(var(--primary-N)), so they must be channel triplets.
+   They also have to sit on `body`: Arco declares its own ramp there, which
+   outranks anything on :root. */
+body {
+  --primary-1: 255, 240, 241;
+  --primary-2: 251, 209, 212;
+  --primary-3: 247, 165, 170;
+  --primary-4: 242, 107, 115;
+  --primary-5: 232, 50, 60;
+  --primary-6: 219, 0, 17;
+  --primary-7: 184, 0, 14;
 }
 
 body[arco-theme='dark'] {
@@ -43,9 +47,15 @@ body[arco-theme='dark'] {
   --footer-text: #8FA3B8;
   --dropzone-bg: #0E2138;
   --dropzone-active-bg: #16324F;
-  --primary-5: #F26B73;
-  --primary-6: #E8323C;
-  --primary-7: #DB0011;
+
+  /* Arco inverts the primary ramp in dark mode: 1 is the darkest tint */
+  --primary-1: 44, 0, 7;
+  --primary-2: 74, 0, 12;
+  --primary-3: 116, 0, 18;
+  --primary-4: 160, 0, 24;
+  --primary-5: 210, 44, 54;
+  --primary-6: 232, 50, 60;
+  --primary-7: 247, 107, 115;
 
   /* Tint Arco's dark greys toward HSBC navy */
   --color-bg-1: #0B1B2E;
@@ -312,8 +322,27 @@ body {
   color: var(--brand-red);
 }
 
-.upload-support {
-  margin: 12px 0 0;
+/* Portalled to <body>: the sticky nav's backdrop-filter would trap a fixed child */
+.upload-toast {
+  position: fixed;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-1);
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+.upload-toast svg {
+  color: var(--brand-red);
 }
 
 @media (max-width: 768px) {
