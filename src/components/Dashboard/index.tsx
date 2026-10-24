@@ -6,7 +6,7 @@ import type { AppState, StatementData, Transaction } from '@/types/statement';
 import { addStatements, setRewards, setLoading, setError } from '@/store';
 import { parsePDFFromFile } from '@/utils/pdfParser';
 import { calculateRewards, RED_HOT_ANNUAL_CAP, APPLE_PAY_QR_ANNUAL_CAP } from '@/utils/rewardCalculator';
-import FileUploadComponent from '@/components/FileUpload';
+import FileUploadComponent, { type UploadOutcome } from '@/components/FileUpload';
 import TransactionTable from '@/components/TransactionTable';
 import RewardSummary from '@/components/RewardSummary';
 import { useLocale } from '@/locale/LocaleContext';
@@ -39,9 +39,10 @@ const Dashboard: React.FC = () => {
   const parsedFileNames = useRef<Set<string>>(new Set());
 
   const handleFilesParsed = useCallback(
-    async (files: File[]) => {
+    async (files: File[]): Promise<UploadOutcome> => {
       const fresh = files.filter((f) => !parsedFileNames.current.has(f.name));
-      if (fresh.length === 0) return;
+      const skipped = files.length - fresh.length;
+      if (fresh.length === 0) return { parsed: 0, skipped, failed: false };
       dispatch(setLoading(true));
       try {
         let allParsed: StatementData[] = [];
@@ -51,7 +52,7 @@ const Dashboard: React.FC = () => {
         }
         if (allParsed.length === 0) {
           dispatch(setError('No statement data found in the uploaded files.'));
-          return;
+          return { parsed: 0, skipped, failed: true };
         }
         fresh.forEach((f) => parsedFileNames.current.add(f.name));
         dispatch(addStatements(allParsed));
@@ -62,8 +63,10 @@ const Dashboard: React.FC = () => {
         // Always recalculate from scratch with full caps
         const rewards = calculateRewards(combined, RED_HOT_ANNUAL_CAP, APPLE_PAY_QR_ANNUAL_CAP);
         dispatch(setRewards(rewards));
+        return { parsed: fresh.length, skipped, failed: false };
       } catch (e: any) {
         dispatch(setError(e.message || 'Failed to parse PDF'));
+        return { parsed: 0, skipped, failed: true };
       }
     },
     [dispatch, statements, redHotCapRemaining, applePayQrCapRemaining]

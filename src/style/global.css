@@ -14,6 +14,8 @@
   --btn-circle-hover: #E5E6EB;
   --footer-bg: #0B1B2E;
   --footer-text: #A9BACB;
+  --dropzone-bg: #F7F8FA;
+  --dropzone-active-bg: #FFF0F1;
 
   /* Recolor Arco primary (blue -> HSBC red) */
   --primary-1: #FFF0F1;
@@ -39,6 +41,8 @@ body[arco-theme='dark'] {
   --btn-circle-hover: #22466B;
   --footer-bg: #071524;
   --footer-text: #8FA3B8;
+  --dropzone-bg: #0E2138;
+  --dropzone-active-bg: #16324F;
   --primary-5: #F26B73;
   --primary-6: #E8323C;
   --primary-7: #DB0011;
@@ -231,6 +235,87 @@ body {
   max-width: calc(100vw - 24px);
 }
 
+/* ---------- Upload modal ---------- */
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 176px;
+  padding: 20px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--dropzone-bg);
+  color: var(--text-2);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.upload-dropzone:hover:not(:disabled),
+.upload-dropzone-active {
+  border-color: var(--brand-red);
+  background: var(--dropzone-active-bg);
+}
+
+.upload-dropzone:focus-visible {
+  outline: 2px solid var(--brand-red);
+  outline-offset: 2px;
+}
+
+.upload-dropzone:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.upload-dropzone-icon {
+  font-size: 28px;
+  color: var(--brand-red);
+}
+
+.upload-dropzone-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-1);
+}
+
+.upload-dropzone-hint {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.upload-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-1);
+}
+
+.upload-result-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.upload-result-muted {
+  color: var(--text-3);
+}
+
+.upload-result-failed {
+  color: var(--brand-red);
+}
+
+.upload-support {
+  margin: 12px 0 0;
+}
+
 @media (max-width: 768px) {
   .page-container {
     padding: 12px;
@@ -254,5 +339,24 @@ body {
 
   .reward-card {
     min-height: 140px;
+  }
+
+  .upload-modal .arco-modal-content {
+    padding: 16px;
+  }
+
+  .upload-dropzone {
+    min-height: 152px;
+    padding: 16px 12px;
+  }
+
+  .upload-dropzone-icon {
+    font-size: 24px;
+  }
+
+  /* Full-width close button for thumb reach */
+  .upload-modal .arco-modal-footer .arco-btn {
+    width: 100%;
+    height: 44px;
   }
 }
