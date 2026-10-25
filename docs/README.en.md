@@ -2,7 +2,7 @@
 
 A **frontend-only** credit card statement analyser: upload the eStatement PDF of an HSBC Pulse dual-currency card, and every transaction is parsed in your browser with its RewardCash earning and effective reward rate.
 
-[中文](../README.md) · **Live demo**: <https://hsbc-pulse-rewards-keork2rlvbr.qoder.zone>
+[中文](../README.md) · **Live demo**: <https://hsbc-pulse-rewards-7f3di20nb1z.qoder.zone>
 
 ## Why
 
