@@ -24,8 +24,10 @@ describe('statementParser', () => {
     expect(hkd?.previousBalance).toBe(0);
     expect(hkd?.paymentDueDate).toBe('14 OCT 2026');
     expect(hkd?.minimumPayment).toBe(136.09);
+    expect(hkd?.statementBalance).toBe(136.09);
     expect(cny?.previousBalance).toBe(3000);
     expect(cny?.minimumPayment).toBe(236.66);
+    expect(cny?.statementBalance).toBe(236.66);
   });
 
   it('should parse correct number of transactions', () => {

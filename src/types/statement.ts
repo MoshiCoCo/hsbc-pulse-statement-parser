@@ -50,6 +50,7 @@ export interface StatementData {
   cardType: string;
   statementDate: string;
   previousBalance: number;
+  statementBalance: number;
   currency: 'HKD' | 'CNY';
   transactions: Transaction[];
   rewardCashSummary?: RewardCashSummary;

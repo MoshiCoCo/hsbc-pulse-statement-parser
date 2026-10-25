@@ -90,6 +90,15 @@ const Dashboard: React.FC = () => {
   const cnyCharges = byCurrency(allTransactions.filter((t) => !t.isCredit), 'CNY');
   const cnyCredits = byCurrency(allTransactions.filter((t) => t.isCredit), 'CNY');
 
+  // Uploading several statements can span cycles, so the owed figure comes from the newest bill
+  const owedFor = (currency: 'HKD' | 'CNY') => {
+    const sections = statements.filter((s) => s.currency === currency);
+    if (sections.length === 0) return 0;
+    return sections.reduce((newest, s) =>
+      new Date(s.statementDate).getTime() > new Date(newest.statementDate).getTime() ? s : newest
+    ).statementBalance;
+  };
+
   const isDark = theme === 'dark';
   return (
     <>
@@ -175,17 +184,13 @@ const Dashboard: React.FC = () => {
               <Col {...CARD_COL}>
                 <Card>
                   <Statistic
-                    title={t('dashboard.statementBalance')}
-                    value={(() => {
-                      const charges = sumAmount(hkdCharges);
-                      const credits = sumAmount(hkdCredits);
-                      return Math.abs(charges - credits);
-                    })()}
+                    title={t('dashboard.owedThisPeriod')}
+                    value={owedFor('HKD')}
                     prefix="HK$"
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {t('dashboard.netBalance')}
+                    {t('dashboard.owedHint')}
                   </div>
                 </Card>
               </Col>
@@ -254,17 +259,13 @@ const Dashboard: React.FC = () => {
               <Col {...CARD_COL}>
                 <Card>
                   <Statistic
-                    title={t('dashboard.statementBalance')}
-                    value={(() => {
-                      const charges = sumAmount(cnyCharges);
-                      const credits = sumAmount(cnyCredits);
-                      return Math.abs(charges - credits);
-                    })()}
+                    title={t('dashboard.owedThisPeriod')}
+                    value={owedFor('CNY')}
                     prefix="¥"
                     precision={2}
                   />
                   <div style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-                    {t('dashboard.netBalance')}
+                    {t('dashboard.owedHint')}
                   </div>
                 </Card>
               </Col>

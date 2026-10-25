@@ -41,6 +41,12 @@ function parseAmountAfter(tokens: string[], fromIdx: number): number {
   return 0;
 }
 
+// The amount owed for the period, as printed in the TRANSACTION SUMMARY block
+function extractStatementBalance(tokens: string[], fromIdx: number): number {
+  const labelIdx = findTokenSequence(tokens, fromIdx, ['TOTAL', 'ACCOUNT', 'BALANCE']);
+  return labelIdx === null ? 0 : parseAmountAfter(tokens, labelIdx + 3);
+}
+
 function tokenize(text: string): string[] {
   return text.split(/\s+/).filter((t) => t.length > 0);
 }
@@ -306,6 +312,7 @@ export function parseStatementPDF(text: string): StatementData[] {
       cardType: 'Pulse DualCurrency',
       statementDate,
       previousBalance,
+      statementBalance: extractStatementBalance(tokens, firstPostDateIdx),
       currency: 'HKD',
       transactions,
       rewardCashSummary: rewardCashSummary ?? undefined,
@@ -342,6 +349,7 @@ export function parseStatementPDF(text: string): StatementData[] {
       cardType: 'Pulse DualCurrency',
       statementDate,
       previousBalance,
+      statementBalance: extractStatementBalance(tokens, cnyPostDateIdx),
       currency: 'CNY',
       transactions,
       rewardCashSummary: rewardCashSummary ?? undefined,
